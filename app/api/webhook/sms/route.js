@@ -1,6 +1,0 @@
-export const dynamic = "force-dynamic";
-
-// Your existing POST/GET export handlers continue down here...
-export async function POST(request) {
-  // ...
-}
