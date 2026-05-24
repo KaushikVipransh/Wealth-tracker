@@ -4,16 +4,31 @@ import { useState, useEffect, startTransition } from "react";
 import { createTransaction, getUserTransactions } from "../actions/transaction";
 import { getUserAccounts } from "../actions/account";
 
+/* ────────────────────────────────────────────────────────────
+   WEALTHOS — Transaction Ledger
+   Dark-Cyber Terminal Aesthetic
+──────────────────────────────────────────────────────────── */
+
+const CATEGORY_CONFIG = {
+  FOOD:          { label: "Food & Dining",     color: "#F43F5E" },
+  SHOPPING:      { label: "Shopping",           color: "#F59E0B" },
+  ENTERTAINMENT: { label: "Entertainment",      color: "#A78BFA" },
+  UTILITIES:     { label: "Bills & Utilities",  color: "#38BDF8" },
+  INVESTMENT:    { label: "Investments",         color: "#10B981" },
+  SALARY:        { label: "Salary / Income",    color: "#10B981" },
+  OTHERS:        { label: "Others / Misc",      color: "#64748B" },
+};
+
 export default function TransactionPage() {
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   // 🇮🇳 Inline Indian Rupee (INR) Formatter Engine
   const formatINR = (amount) => {
     const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount;
     if (isNaN(numericAmount) || numericAmount == null) return "₹0.00";
-    
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -28,7 +43,6 @@ export default function TransactionPage() {
         getUserTransactions(),
         getUserAccounts(),
       ]);
-
       setTransactions(txData);
       setAccounts(accData);
     } catch (error) {
@@ -44,6 +58,7 @@ export default function TransactionPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    setSubmitting(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
 
@@ -56,132 +71,452 @@ export default function TransactionPage() {
     } else {
       alert(`Transaction Error: ${result.error}`);
     }
+    setSubmitting(false);
   }
 
+  const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((s, t) => s + parseFloat(t.amount), 0);
+  const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((s, t) => s + parseFloat(t.amount), 0);
+
   return (
-    <div className="p-8 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      {/* 📝 LEFT COLUMN: LOG TRANSACTION FORM */}
-      <div className="bg-white border rounded-xl p-6 shadow-sm h-fit">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Log Transaction</h2>
-        
-        {accounts.length === 0 ? (
-          <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
-            ⚠️ You must create a bank account under the Accounts tab before you can log transactions!
-          </p>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <input 
-                type="text" 
-                name="description" 
-                placeholder="e.g., Kirana Store, Salary Bonus" 
-                required
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 transition"
-              />
-            </div>
+    <div style={{
+      padding: "40px 24px 60px",
+      maxWidth: "1280px",
+      margin: "0 auto",
+      fontFamily: "Inter, system-ui, sans-serif",
+    }}>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select 
-                  name="type" 
-                  required
-                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:border-blue-500 transition"
-                >
-                  <option value="EXPENSE">Expense (-)</option>
-                  <option value="INCOME">Income (+)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
-                <input 
-                  type="number" 
-                  name="amount" 
-                  step="0.01" 
-                  placeholder="0.00" 
-                  required
-                  className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 transition"
-                />
-              </div>
-            </div>
-
-            {/* 🏷️ NEW: CATEGORY TAG SELECTION DROP-DOWN */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category Tag</label>
-              <select 
-                name="category" 
-                required
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:border-blue-500 transition"
-              >
-                <option value="FOOD">Food & Dining 🍔</option>
-                <option value="SHOPPING">Shopping 🛍️</option>
-                <option value="ENTERTAINMENT">Entertainment 🎬</option>
-                <option value="UTILITIES">Bills & Utilities ⚡</option>
-                <option value="INVESTMENT">Investments 📈</option>
-                <option value="SALARY">Salary / Income 💰</option>
-                <option value="OTHERS">Others / Misc 🏷️</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Target Account</label>
-              <select 
-                name="accountId" 
-                required
-                className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-white focus:outline-none focus:border-blue-500 transition"
-              >
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} ({formatINR(acc.balance)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button 
-              type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm py-2.5 px-4 rounded-lg transition shadow-sm"
-            >
-              Log Entry
-            </button>
-          </form>
-        )}
+      {/* ── HEADER ── */}
+      <div style={{ marginBottom: "48px" }}>
+        <div style={{
+          fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
+          color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase",
+          marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px",
+        }}>
+          <span style={{ color: "#3B82F6" }}>WEALTHOS</span>
+          <span>/</span>
+          <span style={{ color: "#64748B" }}>TRANSACTION LEDGER</span>
+        </div>
+        <h1 style={{
+          fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 800,
+          letterSpacing: "-0.03em", color: "#E2E8F0", lineHeight: 1.1, marginBottom: "8px",
+        }}>
+          Transaction History Ledger
+        </h1>
+        <p style={{ fontSize: "0.82rem", color: "#64748B", fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.02em" }}>
+          {transactions.length} entries logged · atomic database transaction engine
+        </p>
       </div>
 
-      {/* 📋 RIGHT COLUMN: LIVE TRANSACTION LEDGER */}
-      <div className="lg:col-span-2 space-y-4">
-        <h2 className="text-xl font-bold text-gray-900">Transaction History Ledger</h2>
-        
-        {loading ? (
-          <div className="text-center text-sm text-gray-500 p-12">Loading transactions...</div>
-        ) : transactions.length === 0 ? (
-          <div className="bg-gray-50 border border-dashed rounded-xl p-12 text-center text-gray-500">
-            No entries logged yet. Add your first income or expense item on the left!
-          </div>
-        ) : (
-          <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-            <div className="divide-y divide-gray-100">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
-                  <div>
-                    <h4 className="font-bold text-gray-900">{tx.description}</h4>
-                    <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500">
-                      <span className="px-2 py-0.5 rounded bg-gray-100 font-medium uppercase">{tx.category}</span>
-                      <span>•</span>
-                      <span>{new Date(tx.date).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <span className={`text-lg font-black ${tx.type === "INCOME" ? "text-green-600" : "text-red-600"}`}>
-                    {tx.type === "INCOME" ? "+" : "-"}{formatINR(tx.amount).replace("INR", "").trim()}
-                  </span>
-                </div>
-              ))}
+      {/* ── QUICK STATS STRIP ── */}
+      {!loading && transactions.length > 0 && (
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "1px", background: "#1E293B", marginBottom: "1px",
+        }}>
+          {[
+            { label: "TOTAL ENTRIES", value: transactions.length.toString(), color: "#3B82F6" },
+            { label: "TOTAL INFLOW",  value: `+${formatINR(totalIncome)}`,   color: "#10B981" },
+            { label: "TOTAL OUTFLOW", value: `-${formatINR(totalExpense)}`,   color: "#F43F5E" },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              background: "linear-gradient(135deg, #0D1420, #0F1825)",
+              padding: "16px 20px",
+            }}>
+              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem", color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>
+                {stat.label}
+              </div>
+              <div style={{
+                fontFamily: "JetBrains Mono, monospace", fontSize: "1rem", fontWeight: 700,
+                color: stat.color, textShadow: `0 0 12px ${stat.color}40`,
+                letterSpacing: "-0.01em",
+              }}>
+                {stat.value}
+              </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── MAIN GRID ── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "340px 1fr",
+        gap: "1px",
+        background: "#1E293B",
+        alignItems: "start",
+      }}>
+
+        {/* ── LEFT: LOG TRANSACTION FORM ── */}
+        <div style={{
+          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
+          padding: "28px",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Corner marks */}
+          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #3B82F6", borderLeft:"1px solid #3B82F6", opacity:0.7 }} />
+          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #3B82F6", borderRight:"1px solid #3B82F6", opacity:0.7 }} />
+
+          {/* Background glow */}
+          <div style={{
+            position: "absolute", top: 0, right: 0, width: "150px", height: "150px",
+            background: "radial-gradient(ellipse at top right, rgba(59,130,246,0.06) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Panel header */}
+          <div style={{ marginBottom: "28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+              <div style={{ width: "3px", height: "16px", background: "#3B82F6", boxShadow: "0 0 8px rgba(59,130,246,0.6)" }} />
+              <span style={{
+                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
+                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                color: "#E2E8F0",
+              }}>
+                Log Transaction Entry
+              </span>
+            </div>
+            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase", paddingLeft: "11px" }}>
+              Atomic write · auto-adjusts account balance
+            </p>
           </div>
-        )}
+
+          {accounts.length === 0 ? (
+            <div style={{
+              border: "1px solid rgba(245,158,11,0.3)",
+              background: "rgba(245,158,11,0.05)",
+              padding: "16px",
+            }}>
+              <div style={{
+                fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem",
+                color: "#F59E0B", letterSpacing: "0.06em", textTransform: "uppercase",
+                marginBottom: "6px",
+              }}>
+                ⚠ NO ACCOUNT NODES FOUND
+              </div>
+              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#64748B" }}>
+                Initialize a bank account pool under the Accounts module first.
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+              {/* Description */}
+              <div>
+                <label style={{
+                  display: "block", fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
+                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
+                }}>
+                  Transaction Description
+                </label>
+                <input
+                  type="text"
+                  name="description"
+                  placeholder="e.g., Kirana Store, Salary Bonus"
+                  required
+                  className="input-terminal"
+                  id="tx-description"
+                />
+              </div>
+
+              {/* Type + Amount row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                <div>
+                  <label style={{
+                    display: "block", fontFamily: "JetBrains Mono, monospace",
+                    fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
+                    textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
+                  }}>
+                    Type Vector
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <select name="type" required className="select-terminal" id="tx-type">
+                      <option value="EXPENSE">EXPENSE (−)</option>
+                      <option value="INCOME">INCOME (+)</option>
+                    </select>
+                    <div style={{
+                      position: "absolute", right: "8px", top: "50%",
+                      transform: "translateY(-50%)",
+                      borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
+                      borderTop: "4px solid #3B82F6",
+                      pointerEvents: "none",
+                    }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{
+                    display: "block", fontFamily: "JetBrains Mono, monospace",
+                    fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
+                    textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
+                  }}>
+                    Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    name="amount"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                    className="input-terminal"
+                    id="tx-amount"
+                  />
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label style={{
+                  display: "block", fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
+                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
+                }}>
+                  Category Tag
+                </label>
+                <div style={{ position: "relative" }}>
+                  <select name="category" required className="select-terminal" id="tx-category">
+                    <option value="FOOD">FOOD &amp; DINING</option>
+                    <option value="SHOPPING">SHOPPING</option>
+                    <option value="ENTERTAINMENT">ENTERTAINMENT</option>
+                    <option value="UTILITIES">BILLS &amp; UTILITIES</option>
+                    <option value="INVESTMENT">INVESTMENTS</option>
+                    <option value="SALARY">SALARY / INCOME</option>
+                    <option value="OTHERS">OTHERS / MISC</option>
+                  </select>
+                  <div style={{
+                    position: "absolute", right: "8px", top: "50%",
+                    transform: "translateY(-50%)",
+                    borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
+                    borderTop: "4px solid #3B82F6",
+                    pointerEvents: "none",
+                  }} />
+                </div>
+              </div>
+
+              {/* Target Account */}
+              <div>
+                <label style={{
+                  display: "block", fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
+                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
+                }}>
+                  Target Account Node
+                </label>
+                <div style={{ position: "relative" }}>
+                  <select name="accountId" required className="select-terminal" id="tx-account">
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} · {formatINR(acc.balance)}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: "absolute", right: "8px", top: "50%",
+                    transform: "translateY(-50%)",
+                    borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
+                    borderTop: "4px solid #3B82F6",
+                    pointerEvents: "none",
+                  }} />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                id="submit-transaction"
+                className="btn-cyber"
+                disabled={submitting}
+                style={{
+                  width: "100%",
+                  opacity: submitting ? 0.6 : 1,
+                  cursor: submitting ? "not-allowed" : "pointer",
+                }}
+              >
+                {submitting ? "PROCESSING..." : "COMMIT TRANSACTION"}
+              </button>
+            </form>
+          )}
+
+          {/* Status */}
+          <div style={{
+            marginTop: "20px", paddingTop: "16px",
+            borderTop: "1px solid #1E293B",
+            display: "flex", alignItems: "center", gap: "8px",
+          }}>
+            <span className="status-live-dot" />
+            <span style={{
+              fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
+              color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase",
+            }}>
+              ATOMIC WRITE ENGINE · ONLINE
+            </span>
+          </div>
+        </div>
+
+        {/* ── RIGHT: TRANSACTION HISTORY ── */}
+        <div style={{
+          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
+          padding: "28px",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Corner marks */}
+          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #10B981", borderLeft:"1px solid #10B981", opacity:0.6 }} />
+          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #10B981", borderRight:"1px solid #10B981", opacity:0.6 }} />
+
+          {/* Header */}
+          <div style={{ marginBottom: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+              <div style={{ width: "3px", height: "16px", background: "#10B981", boxShadow: "0 0 8px rgba(16,185,129,0.6)" }} />
+              <span style={{
+                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
+                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                color: "#E2E8F0",
+              }}>
+                Full History Ledger
+              </span>
+            </div>
+            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase", paddingLeft: "11px" }}>
+              All committed transactions · immutable audit log
+            </p>
+          </div>
+
+          {/* Loading state */}
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} style={{
+                  height: "56px",
+                  background: "rgba(30,41,59,0.3)",
+                  animation: "pulse 1.5s ease-in-out infinite",
+                  animationDelay: `${i * 0.1}s`,
+                }} />
+              ))}
+              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#334155", textAlign: "center", marginTop: "8px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                FETCHING LEDGER DATA...
+              </div>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div style={{
+              textAlign: "center", padding: "80px 24px",
+              border: "1px dashed #1E293B",
+            }}>
+              <div style={{
+                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
+                color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
+                marginBottom: "6px",
+              }}>
+                LEDGER EMPTY — NO ENTRIES LOGGED
+              </div>
+              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#1E293B" }}>
+                Add your first income or expense entry using the form on the left
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Table header */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto auto auto",
+                gap: "12px",
+                padding: "6px 12px",
+                background: "rgba(30,41,59,0.3)",
+                borderTop: "1px solid #1E293B",
+                borderBottom: "1px solid #1E293B",
+                marginBottom: "0",
+              }}>
+                {["DESCRIPTION / ID", "CATEGORY", "DATE", "AMOUNT"].map((h) => (
+                  <span key={h} style={{
+                    fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
+                    color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600,
+                  }}>
+                    {h}
+                  </span>
+                ))}
+              </div>
+
+              {/* Transaction rows */}
+              <div style={{ maxHeight: "520px", overflowY: "auto" }}>
+                {transactions.map((tx, idx) => {
+                  const catCfg = CATEGORY_CONFIG[tx.category] || CATEGORY_CONFIG.OTHERS;
+                  return (
+                    <div
+                      key={tx.id}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto auto auto",
+                        gap: "12px",
+                        padding: "12px 12px",
+                        borderBottom: "1px solid rgba(30,41,59,0.5)",
+                        alignItems: "center",
+                        transition: "background 0.15s ease",
+                      }}
+                      className="tx-row"
+                    >
+                      <style>{`
+                        .tx-row:hover {
+                          background: rgba(59,130,246,0.03) !important;
+                        }
+                      `}</style>
+
+                      {/* Description */}
+                      <div>
+                        <div style={{
+                          fontWeight: 600, fontSize: "0.82rem", color: "#E2E8F0",
+                          letterSpacing: "-0.01em", marginBottom: "2px",
+                        }}>
+                          {tx.description || "Uncategorized"}
+                        </div>
+                        <div style={{
+                          fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
+                          color: "#334155", letterSpacing: "0.04em",
+                        }}>
+                          TX_{tx.id.slice(0, 8).toUpperCase()}
+                        </div>
+                      </div>
+
+                      {/* Category */}
+                      <span style={{
+                        fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
+                        fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
+                        color: catCfg.color,
+                        border: `1px solid ${catCfg.color}30`,
+                        background: `${catCfg.color}08`,
+                        padding: "2px 7px",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {tx.category}
+                      </span>
+
+                      {/* Date */}
+                      <span style={{
+                        fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
+                        color: "#64748B", whiteSpace: "nowrap",
+                      }}>
+                        {new Date(tx.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
+                      </span>
+
+                      {/* Amount */}
+                      <span style={{
+                        fontFamily: "JetBrains Mono, monospace",
+                        fontSize: "0.88rem", fontWeight: 700,
+                        color: tx.type === "INCOME" ? "#10B981" : "#F43F5E",
+                        textShadow: tx.type === "INCOME"
+                          ? "0 0 8px rgba(16,185,129,0.35)"
+                          : "0 0 8px rgba(244,63,94,0.35)",
+                        letterSpacing: "-0.01em",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {tx.type === "INCOME" ? "+" : "−"}
+                        {formatINR(tx.amount).replace("INR", "").trim()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
     </div>
