@@ -1,41 +1,42 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# 🛡️ Core Dependencies & Build Outflows
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
 /.next/
 /out/
-
-# production
 /build
+/dist
 
-# misc
-.DS_Store
-*.pem
+# 🔑 CRITICAL SECURITY BLOCK: Never commit secrets to GitHub
+.env
+.env.local
+.env.production
+.env.development
+.env.*.local
+*.env
 
-# debug
+# 🗄️ Prisma Client Generation Cache
+/prisma/generated-client
+.schema.prisma.base.ms
+*.db
+*.db-journal
+
+# 🐛 Debugging & Operational Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+.eslintcache
 
-# env files (can opt-in for committing if needed)
-.env*
+# 🍏 System Metadata Fallbacks
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
 
-# vercel
+# 🚀 Vercel Deployment Footprints
 .vercel
 
-# typescript
+# 🟦 TypeScript Compiling Cache
 *.tsbuildinfo
 next-env.d.ts
