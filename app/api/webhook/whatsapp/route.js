@@ -3,7 +3,7 @@ import { DB } from "@/lib/prisma";
 
 export async function POST(request) {
   try {
-    // 1. Parse parameters out of the incoming Twilio payload safely
+    // 1. Safely parse parameters from Twilio form-urlencoded data payload
     const rawText = await request.text();
     const params = new URLSearchParams(rawText);
     const rawFrom = params.get("From"); 
@@ -13,10 +13,10 @@ export async function POST(request) {
       return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
     }
 
-    // Isolate pure digits for phone matching
+    // Isolate clean phone digits (e.g., "919310240287")
     const cleanPhone = rawFrom.replace("whatsapp:", "").replace(/\D/g, "");
 
-    // 2. Locate the linked account profile in your database
+    // 2. Query target user account row using your unique Prisma constraint field
     const user = await DB.user.findUnique({
       where: { whatsappPhone: cleanPhone },
     });
@@ -30,18 +30,20 @@ export async function POST(request) {
       return new NextResponse(unlinkedTwiml, { headers: { "Content-Type": "text/xml" } });
     }
 
-    // 3. Upgraded Native Fetch to the Active Production Gemini 2.5 Gateway
+    // 3. Upgraded Native Fetch to Gemini 2.5 Gateway extracting the target account name
     const apiKey = process.env.GEMINI_API_KEY;
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const prompt = `
       Extract transaction metrics from this text statement string: "${body}".
+      Identify the payment account mentioned (like pnb, HDFC, cash, etc.) and extract it.
       Return a clean JSON object containing these exactly matched keys:
       {
         "amount": number,
         "description": "string naming what was bought",
         "category": "FOOD" | "SHOPPING" | "ENTERTAINMENT" | "UTILITIES" | "INVESTMENT" | "OTHERS",
-        "type": "EXPENSE" | "INCOME"
+        "type": "EXPENSE" | "INCOME",
+        "accountName": "extracted account name string in lowercase (e.g., pnb)"
       }
     `;
 
@@ -50,7 +52,6 @@ export async function POST(request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        // Enforces strict JSON return types directly via Google's 2.5 platform parameters
         generation_config: {
           response_mime_type: "application/json"
         }
@@ -66,7 +67,35 @@ export async function POST(request) {
     const rawJsonText = aiData.candidates[0].content.parts[0].text;
     const parsedData = JSON.parse(rawJsonText.trim());
 
-    // 4. Record entry directly into your database mapping the proper Prisma relation links
+    // 4. Look up the specific account belonging to this user matching the keyword name (e.g., "pnb")
+    // This utilizes a case-insensitive match on your account name field index
+    let targetAccount = await DB.account.findFirst({
+      where: {
+        userId: user.id,
+        name: {
+          contains: parsedData.accountName,
+          mode: "insensitive"
+        }
+      }
+    });
+
+    // Fallback: If user hasn't created a "pnb" account row yet, fetch their absolute first wallet account row instead
+    if (!targetAccount) {
+      targetAccount = await DB.account.findFirst({
+        where: { userId: user.id },
+      });
+    }
+
+    if (!targetAccount) {
+      const noAccountTwiml = `
+        <Response>
+          <Message>❌ Sync Failure: Could not locate a matching or default account dashboard layout to link this transaction to.</Message>
+        </Response>
+      `;
+      return new NextResponse(noAccountTwiml, { headers: { "Content-Type": "text/xml" } });
+    }
+
+    // 5. Write the complete, multi-relational Prisma entry row data
     const savedTx = await DB.transaction.create({
       data: {
         amount: parseFloat(parsedData.amount),
@@ -76,14 +105,17 @@ export async function POST(request) {
         date: new Date(),
         user: {
           connect: { id: user.id }
+        },
+        account: {
+          connect: { id: targetAccount.id }
         }
       },
     });
 
-    // 5. Send successful execution receipt back to your phone chat UI
+    // 6. Respond with a successful synchronization card statement
     const successTwiml = `
       <Response>
-        <Message>✅ Core Ledger Sync Completed!\n\n🔹 Item: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Category: ${parsedData.category}\n\nYour dashboard ledger charts have updated dynamically.</Message>
+        <Message>✅ Core Ledger Sync Completed!\n\n🔹 Item: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Account: ${targetAccount.name.toUpperCase()}\n\nYour production account balance ledgers have updated dynamically.</Message>
       </Response>
     `;
     return new NextResponse(successTwiml, { headers: { "Content-Type": "text/xml" } });
