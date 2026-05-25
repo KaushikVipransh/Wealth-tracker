@@ -27,24 +27,22 @@ export async function POST(request) {
 
     if (!user) {
       return new NextResponse(
-        `<Response><Message>❌ Integration Error: Phone number (${cleanPhone}) is not linked to any WealthOS account. Please link it from your dashboard first.</Message></Response>`,
+        `<Response><Message>❌ Integration Error: Phone number (${cleanPhone}) is not linked to any account. Please link it from your dashboard first.</Message></Response>`,
         { headers: { "Content-Type": "text/xml" } }
       );
     }
 
-    // 3. 🧠 Route through the hybrid parser (local fast-path → Gemini fallback)
-    //    Uses the shared lib/transactionParser.js — consistent with the rest of the app
+    // 3. Route through our fortified hybrid engine (Gemini 2.5 with a Regex native backup)
     const parsed = await parseWhatsAppMessage(body);
 
     if (!parsed || !parsed.amount) {
       return new NextResponse(
-        `<Response><Message>⚠️ Parse Failure: Could not extract a valid transaction amount from your message. Try: "Spent 350 on lunch from sbi"</Message></Response>`,
+        `<Response><Message>⚠️ Parse Failure: System could not identify a dollar value or numerical amount in your statement text. Try formatting as: "Burger 100 from pnb"</Message></Response>`,
         { headers: { "Content-Type": "text/xml" } }
       );
     }
 
-    // 4. Normalize category to the site-wide canonical enum set
-    //    Handles legacy aliases from older parser prompt (BILLS→UTILITIES, INVESTMENTS→INVESTMENT)
+    // 4. Normalize category variables to the site-wide canonical enum set
     const CATEGORY_ALIAS_MAP = {
       BILLS: "UTILITIES",
       INVESTMENTS: "INVESTMENT",
@@ -72,7 +70,7 @@ export async function POST(request) {
       });
     }
 
-    // Fallback: use their first account
+    // Safety Fallback: use their first account structural container if name match drops
     if (!targetAccount) {
       targetAccount = await DB.account.findFirst({
         where: { userId: user.id },
@@ -82,13 +80,12 @@ export async function POST(request) {
 
     if (!targetAccount) {
       return new NextResponse(
-        `<Response><Message>❌ No account found: Please create at least one account in your WealthOS dashboard before logging transactions via WhatsApp.</Message></Response>`,
+        `<Response><Message>❌ No account found: Please create at least one account card (e.g. "pnb") in your dashboard settings layout before syncing transactions.</Message></Response>`,
         { headers: { "Content-Type": "text/xml" } }
       );
     }
 
-    // 6. ⚛️ Atomic DB transaction — write ledger row + update account balance
-    //    Mirrors createTransaction() in app/actions/transaction.js for full consistency
+    // 6. ⚛️ Atomic DB transaction — write ledger row + update account balance values
     await DB.$transaction(async (tx) => {
       // Write the transaction row
       await tx.transaction.create({
@@ -103,7 +100,7 @@ export async function POST(request) {
         },
       });
 
-      // Atomically adjust account balance
+      // Adjust ledger balance values safely using Prisma Decimal actions
       const updatedBalance =
         type === "INCOME"
           ? targetAccount.balance.add(amount)
@@ -115,17 +112,17 @@ export async function POST(request) {
       });
     });
 
-    // 7. Respond with a confirmation TwiML card
+    // 7. Respond with a confirmation TwiML receipt card
     const sign = type === "INCOME" ? "+" : "-";
     return new NextResponse(
-      `<Response><Message>✅ WealthOS Ledger Updated!\n\n📋 ${parsed.description || "Transaction"}\n💰 ${sign}₹${parsed.amount}\n🏦 ${targetAccount.name.toUpperCase()}\n🏷️ ${category}\n\nAccount balance has been updated automatically.</Message></Response>`,
+      `<Response><Message>✅ Ledger Sync Completed!\n\n📋 ${parsed.description}\n💰 ${sign}₹${parsed.amount}\n🏦 ${targetAccount.name.toUpperCase()}\n🏷️ ${category}\n\nYour production account balances have compiled dynamically.</Message></Response>`,
       { headers: { "Content-Type": "text/xml" } }
     );
 
   } catch (err) {
     console.error("💥 WhatsApp Webhook Error:", err);
     return new NextResponse(
-      `<Response><Message>⚠️ System Error: ${err.message || "Unknown exception"}</Message></Response>`,
+      `<Response><Message>⚠️ System Error Exception: ${err.message || "Unknown schema processing crash"}</Message></Response>`,
       { headers: { "Content-Type": "text/xml" } }
     );
   }
