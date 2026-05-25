@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDashboardAnalytics } from "../actions/dashboard";
+import WhatsAppSettings from "../components/WhatsAppSettings"; 
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Financial Command Dashboard
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
 
       {/* ── HEADER ROW ── */}
       <div style={{
-        display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+        display: "flex", alignItems: "flex-start", justifycontent: "space-between",
         gap: "24px", marginBottom: "48px", flexWrap: "wrap",
       }}>
         <div>
@@ -468,11 +469,28 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* 🚀 ── WHATSAPP SYSTEM INTEGRATION ENTRY CORE VECTOR ── */}
+      <div style={{
+        marginTop: "48px",
+        marginBottom: "48px"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+          <div style={{ width: "3px", height: "16px", background: "#A78BFA", boxShadow: "0 0 8px rgba(167,139,250,0.6)" }} />
+          <h2 style={{
+            fontFamily: "JetBrains Mono, monospace", fontSize: "0.75rem",
+            fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+            color: "#E2E8F0"
+          }}>
+            SYSTEM_INTEGRATION_PIPELINES
+          </h2>
+        </div>
+        <WhatsAppSettings />
+      </div>
+
       {/* ── QUICK ACTION STRIP ── */}
       <div style={{
         background: "linear-gradient(90deg, rgba(13,20,32,0.9), rgba(15,24,37,0.9))",
         border: "1px solid #1E293B",
-        borderTop: "none",
         padding: "16px 28px",
         display: "flex",
         alignItems: "center",

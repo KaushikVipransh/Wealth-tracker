@@ -1,62 +1,97 @@
 import { NextResponse } from "next/server";
 import { DB } from "@/lib/prisma";
+import { GoogleGenAI } from "@google/genai";
 
-// 🔐 Choose a strong secret token. You will paste this exact same token into the Meta Developer Portal.
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "MY_SUPER_SECRET_TOKEN_123";
-
-/**
- * 🛠️ 1. THE GET HANDSHAKE (For Meta Dashboard Verification)
- */
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  
-  const mode = searchParams.get("hub.mode");
-  const token = searchParams.get("hub.verify_token");
-  const challenge = searchParams.get("hub.challenge");
-
-  // Check if the mode and token sent by Meta match your local secret config
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("✅ WhatsApp Webhook successfully verified by Meta!");
-    // Must return the exact challenge code sent by Meta as plain text
-    return new Response(challenge, { status: 200 });
-  }
-
-  return new Response("Verification Token Mismatch", { status: 403 });
-}
-
-/**
- * 🚀 2. THE POST STREAM (For receiving real-time user messages)
- */
 export async function POST(request) {
   try {
-    const body = await request.json();
+    // 1. Read parameters as text first to avoid parsing crashes
+    const rawText = await request.text();
+    console.log("📥 Raw Payload Received from Twilio:", rawText);
 
-    // Secure check: Make sure this is a valid WhatsApp message structure payload
-    if (!body.object || !body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
-      return NextResponse.json({ status: "ignored_payload" }, { status: 200 });
+    // 2. Safely parse URL-encoded parameters out of the incoming payload string
+    const params = new URLSearchParams(rawText);
+    const rawFrom = params.get("From"); // e.g., "whatsapp:+919310240287"
+    const body = params.get("Body");    // e.g., "Monster drink 150 from pnb"
+
+    if (!rawFrom || !body) {
+      console.error("⚠️ Payload verification mismatch: missing sender/body arguments.");
+      return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
     }
 
-    const messageData = body.entry[0].changes[0].value.messages[0];
-    const contactData = body.entry[0].changes[0].value.contacts[0];
+    // 3. Extract pure phone digits (strips "whatsapp:" prefix and "+")
+    const cleanPhone = rawFrom.replace("whatsapp:", "").replace(/\D/g, "");
+    console.log(`🔍 Querying database target for phone key: "${cleanPhone}"`);
 
-    const rawText = messageData.text?.body?.trim(); // e.g., "Spent 500 on dinner"
-    const rawSenderPhone = messageData.from;       // e.g., "919876543210"
-    const senderName = contactData?.profile?.name || "User";
+    // 4. Query target user account row using verified Prisma model schema
+    const user = await DB.user.findUnique({
+      where: { whatsappPhone: cleanPhone },
+    });
 
-    console.log(`📱 Incoming WhatsApp from ${senderName} (${rawSenderPhone}): "${rawText}"`);
-
-    if (!rawText) {
-      return NextResponse.json({ status: "empty_text_ignored" }, { status: 200 });
+    if (!user) {
+      console.error(`❌ Device token lookup failed. No user found matching number: ${cleanPhone}`);
+      const unlinkedTwiml = `
+        <Response>
+          <Message>❌ Integration Gating Error: This phone number is not linked to any active account profile inside the dashboard panel.</Message>
+        </Response>
+      `;
+      return new NextResponse(unlinkedTwiml, { headers: { "Content-Type": "text/xml" } });
     }
 
-    // =========================================================================
-    // TODO: Phase 2 - Add parsing mechanics (Regex/AI) & write to DB using Prisma
-    // =========================================================================
+    console.log(`🟩 Device match authorized for user entity: ${user.id}`);
 
-    return NextResponse.json({ status: "success_received" }, { status: 200 });
+    // 5. Fire up Gemini Intelligence parsing routines
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    
+    const prompt = `
+      Extract transaction metrics from this text statement string: "${body}".
+      You must respond ONLY with a clean JSON object structure containing these exactly matched keys:
+      {
+        "amount": number,
+        "description": "string naming what was bought",
+        "category": "FOOD" | "SHOPPING" | "ENTERTAINMENT" | "UTILITIES" | "INVESTMENT" | "OTHERS",
+        "type": "EXPENSE" | "INCOME"
+      }
+    `;
 
-  } catch (error) {
-    console.error("❌ Critical Webhook Processing Crash:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const aiResponse = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+
+    const parsedData = JSON.parse(aiResponse.text.trim());
+    console.log("🤖 Structured telemetry response compiled by AI engine:", parsedData);
+
+    // 6. Write transaction record straight to database rows
+    const savedTx = await DB.transaction.create({
+      data: {
+        userId: user.id,
+        amount: parseFloat(parsedData.amount),
+        description: parsedData.description,
+        category: parsedData.category,
+        type: parsedData.type,
+        date: new Date(),
+      },
+    });
+
+    console.log(`🚀 Transaction saved successfully. Entry ID: ${savedTx.id}`);
+
+    // 7. Render XML handshake configuration string right back to device thread
+    const successTwiml = `
+      <Response>
+        <Message>✅ Core Ledger Sync Completed!\n\n🔹 Description: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Pipeline Category: ${parsedData.category}\n\nYour financial control panel boards have been automatically refreshed.</Message>
+      </Response>
+    `;
+
+    return new NextResponse(successTwiml, { headers: { "Content-Type": "text/xml" } });
+
+  } catch (err) {
+    console.error("💥 Global Webhook Core Failure Crash Exception:", err);
+    const failureTwiml = `
+      <Response>
+        <Message>⚠️ Matrix Execution Fault: Handshake route failed to process transaction entry string variables.</Message>
+      </Response>
+    `;
+    return new NextResponse(failureTwiml, { headers: { "Content-Type": "text/xml" } });
   }
 }

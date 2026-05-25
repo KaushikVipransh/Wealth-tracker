@@ -7,14 +7,23 @@ const isProtectedRoute = createRouteMatcher([
   "/transaction(.*)"
 ]);
 
+// 🌍 Explicit rule forcing Clerk to bypass webhook pathing checks completely
+const isWebhookRoute = createRouteMatcher([
+  "/api/webhook/whatsapp(.*)"
+]);
+
 export default clerkMiddleware(async (auth, req) => {
+  if (isWebhookRoute(req)) {
+    return; // 🚀 Stop execution right here and drop security checkpoints for Twilio
+  }
+
   if (isProtectedRoute(req)) {
     // Force redirect unauthenticated sessions to our login flow page bounds
     await auth.protect();
   }
 });
 
-// 🚀 Cleaned config matcher layout to prevent Next.js 16/Turbopack regex compilation crashes
+// 🛠️ Cleaned config matcher layout to prevent Next.js 16 / Turbopack compilation issues
 export const config = {
   matcher: [
     /*
