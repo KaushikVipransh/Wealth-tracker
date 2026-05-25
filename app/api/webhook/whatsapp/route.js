@@ -1,46 +1,42 @@
 import { NextResponse } from "next/server";
 import { DB } from "@/lib/prisma";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(request) {
   try {
-    // 1. Read parameters as text first to avoid parsing crashes
+    // 1. Read parameters as text first to handle form-urlencoded data safely
     const rawText = await request.text();
-    console.log("📥 Raw Payload Received from Twilio:", rawText);
-
-    // 2. Safely parse URL-encoded parameters out of the incoming payload string
     const params = new URLSearchParams(rawText);
-    const rawFrom = params.get("From"); // e.g., "whatsapp:+919310240287"
-    const body = params.get("Body");    // e.g., "Monster drink 150 from pnb"
+    const rawFrom = params.get("From"); 
+    const body = params.get("Body");    
 
     if (!rawFrom || !body) {
-      console.error("⚠️ Payload verification mismatch: missing sender/body arguments.");
       return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
     }
 
-    // 3. Extract pure phone digits (strips "whatsapp:" prefix and "+")
+    // Strips out "whatsapp:" prefix and any non-digits to isolate the clean country + number format
     const cleanPhone = rawFrom.replace("whatsapp:", "").replace(/\D/g, "");
-    console.log(`🔍 Querying database target for phone key: "${cleanPhone}"`);
 
-    // 4. Query target user account row using verified Prisma model schema
+    // 2. Query target user account row using the phone number unique field index
     const user = await DB.user.findUnique({
       where: { whatsappPhone: cleanPhone },
     });
 
     if (!user) {
-      console.error(`❌ Device token lookup failed. No user found matching number: ${cleanPhone}`);
       const unlinkedTwiml = `
         <Response>
-          <Message>❌ Integration Gating Error: This phone number is not linked to any active account profile inside the dashboard panel.</Message>
+          <Message>❌ Integration Error: This phone number (${cleanPhone}) is not linked to an active user account inside the dashboard.</Message>
         </Response>
       `;
       return new NextResponse(unlinkedTwiml, { headers: { "Content-Type": "text/xml" } });
     }
 
-    console.log(`🟩 Device match authorized for user entity: ${user.id}`);
-
-    // 5. Fire up Gemini Intelligence parsing routines
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    // 3. Initialize Gemini Core Engine and parse statement structures
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
+    });
     
     const prompt = `
       Extract transaction metrics from this text statement string: "${body}".
@@ -53,43 +49,38 @@ export async function POST(request) {
       }
     `;
 
-    const aiResponse = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { responseMimeType: "application/json" }
-    });
+    const aiResult = await model.generateContent(prompt);
+    const parsedData = JSON.parse(aiResult.response.text().trim());
 
-    const parsedData = JSON.parse(aiResponse.text.trim());
-    console.log("🤖 Structured telemetry response compiled by AI engine:", parsedData);
-
-    // 6. Write transaction record straight to database rows
+    // 4. Atomic Database Insert connecting via relational object schema parameters
     const savedTx = await DB.transaction.create({
       data: {
-        userId: user.id,
         amount: parseFloat(parsedData.amount),
         description: parsedData.description,
         category: parsedData.category,
         type: parsedData.type,
         date: new Date(),
+        user: {
+          connect: { id: user.id } // 🚀 Fixed structural mismatch by linking the transaction object here
+        }
       },
     });
 
-    console.log(`🚀 Transaction saved successfully. Entry ID: ${savedTx.id}`);
-
-    // 7. Render XML handshake configuration string right back to device thread
+    // 5. Render XML handshake configuration string right back to the WhatsApp thread
     const successTwiml = `
       <Response>
-        <Message>✅ Core Ledger Sync Completed!\n\n🔹 Description: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Pipeline Category: ${parsedData.category}\n\nYour financial control panel boards have been automatically refreshed.</Message>
+        <Message>✅ Core Ledger Sync Completed!\n\n🔹 Item: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Category: ${parsedData.category}\n\nYour dashboard ledger charts have updated dynamically.</Message>
       </Response>
     `;
-
     return new NextResponse(successTwiml, { headers: { "Content-Type": "text/xml" } });
 
   } catch (err) {
-    console.error("💥 Global Webhook Core Failure Crash Exception:", err);
+    console.error("💥 Live Webhook Engine Crash Trace:", err);
+    
+    // Fallback message that relays the exact error to your phone screen if it breaks somewhere else
     const failureTwiml = `
       <Response>
-        <Message>⚠️ Matrix Execution Fault: Handshake route failed to process transaction entry string variables.</Message>
+        <Message>⚠️ Matrix Execution Fault:\n${err.message || "Unknown schema or library exception"}</Message>
       </Response>
     `;
     return new NextResponse(failureTwiml, { headers: { "Content-Type": "text/xml" } });
