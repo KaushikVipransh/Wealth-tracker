@@ -1,77 +1,33 @@
-WealthOS: Next-Generation Asset Intelligence Cockpit | LIVE WEBSITE:https://wealth-tracker-blush.vercel.app/
-WealthApp is a real-time personal finance tracker designed for power users who value data density and operational precision. Moving away from generic SaaS templates, WealthOS features a custom Obsidian Terminal UI coupled with a unique Hybrid AI Webhook Pipeline that allows users to log transactions directly via WhatsApp using natural language processing.
+# WealthOS | LIVE WEBSITE : https://wealth-tracker-blush.vercel.app/
 
-🚀 Key Integrations & Architecture
-1. Hybrid AI WhatsApp Automation (Meta Cloud API)
-Instead of manually navigating through web forms, users can seamlessly manage their ledger by texting their dedicated WealthApp WhatsApp business entity in plain, conversational language.
+Wealth Tracker is an AI-powered personal financial intelligence application designed to make expense monitoring entirely effortless. With a modern dashboard interface and a zero-friction conversational tracking pipeline, keeping tabs on your money has never been this simple.
 
-The Webhook Engine: A unified secure route handler interfaces seamlessly with Meta’s real-time events pipeline to capture incoming transaction streams.
+---
 
-The Hybrid Parser Router: To minimize network latency and eliminate unnecessary API costs, the ingestion engine uses a multi-layered fallback pipeline:
+## ✨ Key Features
 
--Layer 1 (Token Engine): Instantly scans strings for raw numbers and shorthand notations (~5ms execution cost).
+### 📊 Real-Time Dashboard Insights
+Get a crystal-clear overview of your entire financial health the second you log in. The dashboard aggregates your net worth, tracks your cash flow dynamically, and turns complex numbers into beautiful, easy-to-read charts that highlight your spending habits.
 
--Layer 2 (Google Gen AI SDK): If the input is conversational, the payload cascades to Gemini 1.5 Flash. Enforced via strict JSON schemas, Gemini extracts type-safe structural parameters (Amount, Transaction Type, Category, and Account mapping) straight to the database layer.
+### 🏦 Multiple Account Management
+Consolidate your financial footprint in one secure place. Whether you are tracking checking accounts, credit cards, investment portfolios, or physical cash wallets, you can create and manage multiple dedicated account profiles independently.
 
-2. Fiduciary Data Engine (Prisma & PostgreSQL)
-Atomic Transactions: Powered by a cloud PostgreSQL instance mapped through Prisma ORM with absolute decimal scale handling to mitigate floating-point arithmetic rounding bugs.
+### 📋 Detailed Transaction Logs
+Never lose track of a single rupee. The application maintains an organized, historical ledger of all your transaction flows. Easily filter through categories, view historical patterns, and audit your incoming or outgoing records at a glance.
 
-Secure Session States: Integrated full user lifecycle protection, account gating, and automated routing via Clerk Authentication.
+### 🤖 Smart Parsing Powered by Gemini AI
+Say goodbye to rigid forms and tedious manual entry. The system integrates Google’s state-of-the-art **Gemini 2.5 Flash** intelligence engine. It reads context, extracts essential details, identifies which asset account you used, and automatically files your inputs into the correct category.
 
-🛠️ Tech Stack
-Frontend: Next.js (App Router), React, Tailwind CSS
+### 💬 Seamless WhatsApp Tracking
+Track your wealth on the go without ever opening an app or logging into a website. Simply text your spending notes (like *"Burger 100 from pnb"*) directly to your dedicated WhatsApp assistant. The AI parses the text instantly, logs it to your ledger, and sends a success confirmation right back to your chat window.
 
-Backend: Serverless Webhooks, Google Gen AI SDK (@google/genai)
+### 👥 Scalable Multi-User Architecture
+Built for everyone. The application isolates user profiles securely. Anyone can sign up, map their unique mobile number to their dashboard profile, link their sandbox chat, and enjoy a completely isolated, personal automated tracking environment.
 
-Database & Auth: PostgreSQL, Prisma ORM, Clerk Auth
+---
 
-Deployment: Vercel Production Pipeline, Meta WhatsApp Cloud API
+## 🚀 How It Works (User Flow)
 
-📂 System Flow Blueprint
-[User texts WhatsApp] 
-       │
-       ▼
-[Meta Cloud API Ingestion Webhook]
-       │
-       ▼
-[Next.js Serverless Ingestion Engine]
-       │
-       ├───► (Matches Clean Shorthand) ──► [Layer 1: Fast Token Parser] ──┐
-       │                                                                  ▼
-       └───► (Conversational Sentences) ─► [Layer 2: Gemini 1.5 Flash] ───┼─► [Clean JSON Schema]
-                                                                          │
-       ┌──────────────────────────────────────────────────────────────────┘
-       ▼
-[Prisma Client: PostgreSQL Atomic Update]
-       │
-       ▼
-[Real-Time Obsidian Dashboard Sync]
-⚡ Environment Variables Configuration
-To run this system locally, populate a .env file at your root directory with the following keys:
-
-Plaintext
-# Database Connection
-DATABASE_URL="your_postgresql_connection_string"
-
-# Clerk Authentication Keys
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-
-# Intelligence Core Engine Keys
-GEMINI_API_KEY=your_gemini_api_key
-WHATSAPP_VERIFY_TOKEN=your_custom_verify_token
-🛠️ Getting Started
-Clone the project and install dependencies:
-
-Bash
-npm install
-Synchronize database states and compile Prisma client engines:
-
-Bash
-npx prisma generate
-Run the development environment:
-
-Bash
-npm run dev
+1. **Sign In & Setup:** Authenticate via the secure login portal and set up your personal account containers (e.g., Cash, PNB, Card) inside the dashboard.
+2. **Text to Track:** Send a natural text message to the WhatsApp assistant whenever you make a transaction.
+3. **Instant Sync:** The AI extracts the parameters, updates your specific account balance, and instantly reflects the data on your web charts!
