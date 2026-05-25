@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDashboardAnalytics } from "../actions/dashboard";
+import { syncUserToDatabase } from "../actions/user";
 import WhatsAppSettings from "../components/WhatsAppSettings"; 
 
 /* ────────────────────────────────────────────────────────────
@@ -8,6 +9,9 @@ import WhatsAppSettings from "../components/WhatsAppSettings";
 ──────────────────────────────────────────────────────────── */
 
 export default async function DashboardPage() {
+  // 🔄 Upsert: creates the DB user row on first-ever login, no-op for returning users
+  await syncUserToDatabase();
+
   const result = await getDashboardAnalytics();
 
   // 🇮🇳 Inline Indian Rupee (INR) Formatter Engine for Server Components
@@ -218,6 +222,7 @@ export default async function DashboardPage() {
               { id: "ENTERTAINMENT", name: "Entertainment",      icon: "◈", color: "#A78BFA" },
               { id: "UTILITIES",     name: "Bills & Utilities",  icon: "◈", color: "#38BDF8" },
               { id: "INVESTMENT",    name: "Investments",        icon: "◈", color: "#10B981" },
+              { id: "SALARY",        name: "Salary / Income",   icon: "◈", color: "#34D399" },
               { id: "OTHERS",        name: "Others / Misc",      icon: "◈", color: "#64748B" },
             ].map((masterCategory) => {
               const matchedData = categoryBreakdown.find((c) => c.name === masterCategory.id);

@@ -66,7 +66,8 @@ export async function getDashboardAnalytics() {
       totalIncome,
       totalExpense,
       categoryBreakdown,
-      recentTransactions: transactions.slice(0, 5), // Send just the 5 latest items
+      // 🎯 Serialize to strip Prisma Decimal / Date objects before crossing any RSC boundary
+      recentTransactions: JSON.parse(JSON.stringify(transactions.slice(0, 5))),
     };
 
   } catch (error) {

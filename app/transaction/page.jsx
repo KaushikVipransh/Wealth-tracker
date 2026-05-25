@@ -24,6 +24,7 @@ export default function TransactionPage() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [txStatus, setTxStatus] = useState(null); // null | { type: "success"|"error", message: string }
 
   // 🇮🇳 Inline Indian Rupee (INR) Formatter Engine
   const formatINR = (amount) => {
@@ -59,17 +60,20 @@ export default function TransactionPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
+    setTxStatus(null);
     const form = event.currentTarget;
     const formData = new FormData(form);
 
     const result = await createTransaction(formData);
     if (result.success) {
+      setTxStatus({ type: "success", message: "Transaction committed to ledger." });
       form.reset();
       startTransition(() => {
         loadData();
       });
     } else {
-      alert(`Transaction Error: ${result.error}`);
+      // 🚨 Inline error — no more blocking alert()
+      setTxStatus({ type: "error", message: result.error || "Unknown write failure." });
     }
     setSubmitting(false);
   }
@@ -180,6 +184,52 @@ export default function TransactionPage() {
               Atomic write · auto-adjusts account balance
             </p>
           </div>
+
+          {/* ── Inline Tx Status Banner ── */}
+          {txStatus && (
+            <div
+              role="alert"
+              style={{
+                border: `1px solid ${txStatus.type === "success" ? "rgba(16,185,129,0.35)" : "rgba(244,63,94,0.35)"}`,
+                background: txStatus.type === "success" ? "rgba(16,185,129,0.06)" : "rgba(244,63,94,0.06)",
+                padding: "12px 16px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "10px",
+                marginBottom: "4px",
+              }}
+            >
+              <span style={{
+                fontFamily: "JetBrains Mono, monospace",
+                fontSize: "0.65rem",
+                fontWeight: 700,
+                color: txStatus.type === "success" ? "#10B981" : "#F43F5E",
+                flexShrink: 0,
+              }}>
+                {txStatus.type === "success" ? "✓" : "ERR://"}
+              </span>
+              <div>
+                <div style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: txStatus.type === "success" ? "#10B981" : "#F43F5E",
+                  marginBottom: "2px",
+                }}>
+                  {txStatus.type === "success" ? "TRANSACTION COMMITTED" : "WRITE FAILURE"}
+                </div>
+                <div style={{
+                  fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.58rem",
+                  color: "#64748B",
+                }}>
+                  {txStatus.message}
+                </div>
+              </div>
+            </div>
+          )}
 
           {accounts.length === 0 ? (
             <div style={{

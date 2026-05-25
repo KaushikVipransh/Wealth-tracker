@@ -1,133 +1,132 @@
 import { NextResponse } from "next/server";
 import { DB } from "@/lib/prisma";
+import { parseWhatsAppMessage } from "@/lib/transactionParser";
+import { Prisma } from "@prisma/client";
 
 export async function POST(request) {
   try {
-    // 1. Safely parse parameters from Twilio form-urlencoded data payload
+    // 1. Parse Twilio's form-urlencoded payload
     const rawText = await request.text();
     const params = new URLSearchParams(rawText);
-    const rawFrom = params.get("From"); 
-    const body = params.get("Body");    
+    const rawFrom = params.get("From");
+    const body = params.get("Body");
 
     if (!rawFrom || !body) {
-      return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
+      return new NextResponse("<Response></Response>", {
+        headers: { "Content-Type": "text/xml" },
+      });
     }
 
-    // Isolate clean phone digits (e.g., "919310240287")
+    // Isolate clean phone digits (e.g. "whatsapp:+919876543210" → "919876543210")
     const cleanPhone = rawFrom.replace("whatsapp:", "").replace(/\D/g, "");
 
-    // 2. Query target user account row using your unique Prisma constraint field
+    // 2. Resolve the user from their linked phone number
     const user = await DB.user.findUnique({
       where: { whatsappPhone: cleanPhone },
     });
 
     if (!user) {
-      const unlinkedTwiml = `
-        <Response>
-          <Message>❌ Integration Error: Phone number (${cleanPhone}) is not linked to an active user account.</Message>
-        </Response>
-      `;
-      return new NextResponse(unlinkedTwiml, { headers: { "Content-Type": "text/xml" } });
+      return new NextResponse(
+        `<Response><Message>❌ Integration Error: Phone number (${cleanPhone}) is not linked to any WealthOS account. Please link it from your dashboard first.</Message></Response>`,
+        { headers: { "Content-Type": "text/xml" } }
+      );
     }
 
-    // 3. Upgraded Native Fetch to Gemini 2.5 Gateway extracting the target account name
-    const apiKey = process.env.GEMINI_API_KEY;
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // 3. 🧠 Route through the hybrid parser (local fast-path → Gemini fallback)
+    //    Uses the shared lib/transactionParser.js — consistent with the rest of the app
+    const parsed = await parseWhatsAppMessage(body);
 
-    const prompt = `
-      Extract transaction metrics from this text statement string: "${body}".
-      Identify the payment account mentioned (like pnb, HDFC, cash, etc.) and extract it.
-      Return a clean JSON object containing these exactly matched keys:
-      {
-        "amount": number,
-        "description": "string naming what was bought",
-        "category": "FOOD" | "SHOPPING" | "ENTERTAINMENT" | "UTILITIES" | "INVESTMENT" | "OTHERS",
-        "type": "EXPENSE" | "INCOME",
-        "accountName": "extracted account name string in lowercase (e.g., pnb)"
-      }
-    `;
-
-    const aiResponse = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generation_config: {
-          response_mime_type: "application/json"
-        }
-      })
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      throw new Error(`Gemini Gateway responded with status ${aiResponse.status}: ${errorText}`);
+    if (!parsed || !parsed.amount) {
+      return new NextResponse(
+        `<Response><Message>⚠️ Parse Failure: Could not extract a valid transaction amount from your message. Try: "Spent 350 on lunch from sbi"</Message></Response>`,
+        { headers: { "Content-Type": "text/xml" } }
+      );
     }
 
-    const aiData = await aiResponse.json();
-    const rawJsonText = aiData.candidates[0].content.parts[0].text;
-    const parsedData = JSON.parse(rawJsonText.trim());
+    // 4. Normalize category to the site-wide canonical enum set
+    //    Handles legacy aliases from older parser prompt (BILLS→UTILITIES, INVESTMENTS→INVESTMENT)
+    const CATEGORY_ALIAS_MAP = {
+      BILLS: "UTILITIES",
+      INVESTMENTS: "INVESTMENT",
+    };
+    const VALID_CATEGORIES = new Set([
+      "FOOD", "SHOPPING", "ENTERTAINMENT", "UTILITIES",
+      "INVESTMENT", "SALARY", "OTHERS",
+    ]);
+    const rawCategory = (parsed.category || "OTHERS").toUpperCase();
+    const category = CATEGORY_ALIAS_MAP[rawCategory] ||
+      (VALID_CATEGORIES.has(rawCategory) ? rawCategory : "OTHERS");
 
-    // 4. Look up the specific account belonging to this user matching the keyword name (e.g., "pnb")
-    // This utilizes a case-insensitive match on your account name field index
-    let targetAccount = await DB.account.findFirst({
-      where: {
-        userId: user.id,
-        name: {
-          contains: parsedData.accountName,
-          mode: "insensitive"
-        }
-      }
-    });
+    const type = parsed.type === "INCOME" ? "INCOME" : "EXPENSE";
+    const amount = new Prisma.Decimal(parsed.amount);
 
-    // Fallback: If user hasn't created a "pnb" account row yet, fetch their absolute first wallet account row instead
+    // 5. Resolve target account — match on accountHint name, fall back to first account
+    let targetAccount = null;
+
+    if (parsed.accountHint && parsed.accountHint !== "default") {
+      targetAccount = await DB.account.findFirst({
+        where: {
+          userId: user.id,
+          name: { contains: parsed.accountHint, mode: "insensitive" },
+        },
+      });
+    }
+
+    // Fallback: use their first account
     if (!targetAccount) {
       targetAccount = await DB.account.findFirst({
         where: { userId: user.id },
+        orderBy: { createdAt: "asc" },
       });
     }
 
     if (!targetAccount) {
-      const noAccountTwiml = `
-        <Response>
-          <Message>❌ Sync Failure: Could not locate a matching or default account dashboard layout to link this transaction to.</Message>
-        </Response>
-      `;
-      return new NextResponse(noAccountTwiml, { headers: { "Content-Type": "text/xml" } });
+      return new NextResponse(
+        `<Response><Message>❌ No account found: Please create at least one account in your WealthOS dashboard before logging transactions via WhatsApp.</Message></Response>`,
+        { headers: { "Content-Type": "text/xml" } }
+      );
     }
 
-    // 5. Write the complete, multi-relational Prisma entry row data
-    const savedTx = await DB.transaction.create({
-      data: {
-        amount: parseFloat(parsedData.amount),
-        description: parsedData.description,
-        category: parsedData.category,
-        type: parsedData.type,
-        date: new Date(),
-        user: {
-          connect: { id: user.id }
+    // 6. ⚛️ Atomic DB transaction — write ledger row + update account balance
+    //    Mirrors createTransaction() in app/actions/transaction.js for full consistency
+    await DB.$transaction(async (tx) => {
+      // Write the transaction row
+      await tx.transaction.create({
+        data: {
+          amount,
+          description: parsed.description || body.slice(0, 100),
+          category,
+          type,
+          date: new Date(),
+          user: { connect: { id: user.id } },
+          account: { connect: { id: targetAccount.id } },
         },
-        account: {
-          connect: { id: targetAccount.id }
-        }
-      },
+      });
+
+      // Atomically adjust account balance
+      const updatedBalance =
+        type === "INCOME"
+          ? targetAccount.balance.add(amount)
+          : targetAccount.balance.sub(amount);
+
+      await tx.account.update({
+        where: { id: targetAccount.id },
+        data: { balance: updatedBalance },
+      });
     });
 
-    // 6. Respond with a successful synchronization card statement
-    const successTwiml = `
-      <Response>
-        <Message>✅ Core Ledger Sync Completed!\n\n🔹 Item: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Account: ${targetAccount.name.toUpperCase()}\n\nYour production account balance ledgers have updated dynamically.</Message>
-      </Response>
-    `;
-    return new NextResponse(successTwiml, { headers: { "Content-Type": "text/xml" } });
+    // 7. Respond with a confirmation TwiML card
+    const sign = type === "INCOME" ? "+" : "-";
+    return new NextResponse(
+      `<Response><Message>✅ WealthOS Ledger Updated!\n\n📋 ${parsed.description || "Transaction"}\n💰 ${sign}₹${parsed.amount}\n🏦 ${targetAccount.name.toUpperCase()}\n🏷️ ${category}\n\nAccount balance has been updated automatically.</Message></Response>`,
+      { headers: { "Content-Type": "text/xml" } }
+    );
 
   } catch (err) {
-    console.error("💥 Live Webhook Engine Crash Trace:", err);
-    
-    const failureTwiml = `
-      <Response>
-        <Message>⚠️ Matrix Execution Fault:\n${err.message || "Unknown schema or library exception"}</Message>
-      </Response>
-    `;
-    return new NextResponse(failureTwiml, { headers: { "Content-Type": "text/xml" } });
+    console.error("💥 WhatsApp Webhook Error:", err);
+    return new NextResponse(
+      `<Response><Message>⚠️ System Error: ${err.message || "Unknown exception"}</Message></Response>`,
+      { headers: { "Content-Type": "text/xml" } }
+    );
   }
 }

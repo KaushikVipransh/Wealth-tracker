@@ -1,4 +1,5 @@
-import { createBankAccount, getUserAccounts } from "../actions/account";
+import { getUserAccounts } from "../actions/account";
+import CreateAccountForm from "../components/CreateAccountForm";
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Account Portfolio Management
@@ -104,91 +105,8 @@ export default async function AccountPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <form action={createBankAccount} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-
-            {/* Account Name */}
-            <div>
-              <label style={{
-                display: "block", fontFamily: "JetBrains Mono, monospace",
-                fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-              }}>
-                Account Label
-              </label>
-              <input
-                type="text"
-                name="name"
-                placeholder="e.g., SBI Savings, HDFC Salary"
-                required
-                className="input-terminal"
-                id="account-name"
-              />
-              <div style={{ height: "1px", background: "linear-gradient(90deg, #3B82F640, transparent)", marginTop: "1px" }} />
-            </div>
-
-            {/* Account Type */}
-            <div>
-              <label style={{
-                display: "block", fontFamily: "JetBrains Mono, monospace",
-                fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-              }}>
-                Account Type Vector
-              </label>
-              <div style={{ position: "relative" }}>
-                <select
-                  name="type"
-                  required
-                  className="select-terminal"
-                  id="account-type"
-                >
-                  <option value="CHECKING">CHECKING</option>
-                  <option value="SAVINGS">SAVINGS</option>
-                  <option value="CREDIT">CREDIT CARD</option>
-                  <option value="INVESTMENT">INVESTMENT</option>
-                </select>
-                {/* Custom arrow */}
-                <div style={{
-                  position: "absolute", right: "10px", top: "50%",
-                  transform: "translateY(-50%)",
-                  borderLeft: "4px solid transparent", borderRight: "4px solid transparent",
-                  borderTop: "4px solid #3B82F6",
-                  pointerEvents: "none",
-                }} />
-              </div>
-            </div>
-
-            {/* Initial Balance */}
-            <div>
-              <label style={{
-                display: "block", fontFamily: "JetBrains Mono, monospace",
-                fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-              }}>
-                Initial Balance (₹)
-              </label>
-              <input
-                type="number"
-                name="balance"
-                step="0.01"
-                placeholder="0.00"
-                required
-                className="input-terminal"
-                id="account-balance"
-              />
-              <div style={{ height: "1px", background: "linear-gradient(90deg, #10B98140, transparent)", marginTop: "1px" }} />
-            </div>
-
-            <button
-              type="submit"
-              id="create-account-submit"
-              className="btn-cyber"
-              style={{ width: "100%", marginTop: "8px" }}
-            >
-              INITIALIZE ACCOUNT NODE
-            </button>
-          </form>
+          {/* Form — Client Component handles error/success state */}
+          <CreateAccountForm />
 
           {/* Bottom status */}
           <div style={{

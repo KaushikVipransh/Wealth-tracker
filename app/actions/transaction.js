@@ -64,9 +64,10 @@ export async function createTransaction(formData) {
       });
     });
 
-    // Purge cached values to update UI states across dashboards
+    // Purge cached values to update UI states across all relevant routes
     revalidatePath("/dashboard");
     revalidatePath("/transaction");
+    revalidatePath("/account"); // 🔄 Sync account balance display after atomic update
 
     return { success: true };
 
