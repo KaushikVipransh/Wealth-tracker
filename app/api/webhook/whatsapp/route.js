@@ -32,7 +32,7 @@ export async function POST(request) {
 
     // 3. Direct Native Fetch to Gemini Production API Gateway (Bypasses SDK 404 bugs)
     const apiKey = process.env.GEMINI_API_KEY;
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
     const prompt = `
       Extract transaction metrics from this text statement string: "${body}".
