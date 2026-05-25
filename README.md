@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+WealthOS: Next-Generation Asset Intelligence Cockpit | LIVE WEBSITE:https://wealth-tracker-blush.vercel.app/
+WealthApp is a real-time personal finance tracker designed for power users who value data density and operational precision. Moving away from generic SaaS templates, WealthOS features a custom Obsidian Terminal UI coupled with a unique Hybrid AI Webhook Pipeline that allows users to log transactions directly via WhatsApp using natural language processing.
 
-## Getting Started
+🚀 Key Integrations & Architecture
+1. Hybrid AI WhatsApp Automation (Meta Cloud API)
+Instead of manually navigating through web forms, users can seamlessly manage their ledger by texting their dedicated WealthApp WhatsApp business entity in plain, conversational language.
 
-First, run the development server:
+The Webhook Engine: A unified secure route handler interfaces seamlessly with Meta’s real-time events pipeline to capture incoming transaction streams.
 
-```bash
+The Hybrid Parser Router: To minimize network latency and eliminate unnecessary API costs, the ingestion engine uses a multi-layered fallback pipeline:
+
+-Layer 1 (Token Engine): Instantly scans strings for raw numbers and shorthand notations (~5ms execution cost).
+
+-Layer 2 (Google Gen AI SDK): If the input is conversational, the payload cascades to Gemini 1.5 Flash. Enforced via strict JSON schemas, Gemini extracts type-safe structural parameters (Amount, Transaction Type, Category, and Account mapping) straight to the database layer.
+
+2. Fiduciary Data Engine (Prisma & PostgreSQL)
+Atomic Transactions: Powered by a cloud PostgreSQL instance mapped through Prisma ORM with absolute decimal scale handling to mitigate floating-point arithmetic rounding bugs.
+
+Secure Session States: Integrated full user lifecycle protection, account gating, and automated routing via Clerk Authentication.
+
+🛠️ Tech Stack
+Frontend: Next.js (App Router), React, Tailwind CSS
+
+Backend: Serverless Webhooks, Google Gen AI SDK (@google/genai)
+
+Database & Auth: PostgreSQL, Prisma ORM, Clerk Auth
+
+Deployment: Vercel Production Pipeline, Meta WhatsApp Cloud API
+
+📂 System Flow Blueprint
+[User texts WhatsApp] 
+       │
+       ▼
+[Meta Cloud API Ingestion Webhook]
+       │
+       ▼
+[Next.js Serverless Ingestion Engine]
+       │
+       ├───► (Matches Clean Shorthand) ──► [Layer 1: Fast Token Parser] ──┐
+       │                                                                  ▼
+       └───► (Conversational Sentences) ─► [Layer 2: Gemini 1.5 Flash] ───┼─► [Clean JSON Schema]
+                                                                          │
+       ┌──────────────────────────────────────────────────────────────────┘
+       ▼
+[Prisma Client: PostgreSQL Atomic Update]
+       │
+       ▼
+[Real-Time Obsidian Dashboard Sync]
+⚡ Environment Variables Configuration
+To run this system locally, populate a .env file at your root directory with the following keys:
+
+Plaintext
+# Database Connection
+DATABASE_URL="your_postgresql_connection_string"
+
+# Clerk Authentication Keys
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+
+# Intelligence Core Engine Keys
+GEMINI_API_KEY=your_gemini_api_key
+WHATSAPP_VERIFY_TOKEN=your_custom_verify_token
+🛠️ Getting Started
+Clone the project and install dependencies:
+
+Bash
+npm install
+Synchronize database states and compile Prisma client engines:
+
+Bash
+npx prisma generate
+Run the development environment:
+
+Bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
