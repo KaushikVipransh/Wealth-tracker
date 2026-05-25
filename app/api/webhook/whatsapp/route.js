@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { DB } from "@/lib/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(request) {
   try {
-    // 1. Read parameters as text first to handle form-urlencoded data safely
+    // 1. Safely read and parse parameters from Twilio form-urlencoded data
     const rawText = await request.text();
     const params = new URLSearchParams(rawText);
     const rawFrom = params.get("From"); 
@@ -14,10 +13,10 @@ export async function POST(request) {
       return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
     }
 
-    // Strips out "whatsapp:" prefix and any non-digits to isolate the clean country + number format
+    // Isolate clean phone digits (e.g., "919310240287")
     const cleanPhone = rawFrom.replace("whatsapp:", "").replace(/\D/g, "");
 
-    // 2. Query target user account row using the phone number unique field index
+    // 2. Query target user account row using your unique Prisma constraint field
     const user = await DB.user.findUnique({
       where: { whatsappPhone: cleanPhone },
     });
@@ -25,19 +24,16 @@ export async function POST(request) {
     if (!user) {
       const unlinkedTwiml = `
         <Response>
-          <Message>❌ Integration Error: This phone number (${cleanPhone}) is not linked to an active user account inside the dashboard.</Message>
+          <Message>❌ Integration Error: Phone number (${cleanPhone}) is not linked to an active user account.</Message>
         </Response>
       `;
       return new NextResponse(unlinkedTwiml, { headers: { "Content-Type": "text/xml" } });
     }
 
-    // 3. Initialize Gemini Core Engine and parse statement structures
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "models/gemini-1.5-flash", // Added the exact structural prefix Google requires
-      generationConfig: { responseMimeType: "application/json" }
-    });
-    
+    // 3. Direct Native Fetch to Gemini Production API Gateway (Bypasses SDK 404 bugs)
+    const apiKey = process.env.GEMINI_API_KEY;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
     const prompt = `
       Extract transaction metrics from this text statement string: "${body}".
       You must respond ONLY with a clean JSON object structure containing these exactly matched keys:
@@ -49,10 +45,25 @@ export async function POST(request) {
       }
     `;
 
-    const aiResult = await model.generateContent(prompt);
-    const parsedData = JSON.parse(aiResult.response.text().trim());
+    const aiResponse = await fetch(geminiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
 
-    // 4. Atomic Database Insert connecting via relational object schema parameters
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      throw new Error(`Gemini Gateway responded with status ${aiResponse.status}: ${errorText}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const rawJsonText = aiData.candidates[0].content.parts[0].text;
+    const parsedData = JSON.parse(rawJsonText.trim());
+
+    // 4. Atomic Database Insert using verified Prisma relation object configuration
     const savedTx = await DB.transaction.create({
       data: {
         amount: parseFloat(parsedData.amount),
@@ -61,12 +72,12 @@ export async function POST(request) {
         type: parsedData.type,
         date: new Date(),
         user: {
-          connect: { id: user.id } // 🚀 Fixed structural mismatch by linking the transaction object here
+          connect: { id: user.id }
         }
       },
     });
 
-    // 5. Render XML handshake configuration string right back to the WhatsApp thread
+    // 5. Respond to WhatsApp with an XML confirmation statement card
     const successTwiml = `
       <Response>
         <Message>✅ Core Ledger Sync Completed!\n\n🔹 Item: ${parsedData.description}\n🔹 Value: ₹${parsedData.amount}\n🔹 Category: ${parsedData.category}\n\nYour dashboard ledger charts have updated dynamically.</Message>
@@ -77,7 +88,6 @@ export async function POST(request) {
   } catch (err) {
     console.error("💥 Live Webhook Engine Crash Trace:", err);
     
-    // Fallback message that relays the exact error to your phone screen if it breaks somewhere else
     const failureTwiml = `
       <Response>
         <Message>⚠️ Matrix Execution Fault:\n${err.message || "Unknown schema or library exception"}</Message>
