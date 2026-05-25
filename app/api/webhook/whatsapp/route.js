@@ -34,7 +34,7 @@ export async function POST(request) {
     // 3. Initialize Gemini Core Engine and parse statement structures
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "models/gemini-1.5-flash", // Added the exact structural prefix Google requires
       generationConfig: { responseMimeType: "application/json" }
     });
     
