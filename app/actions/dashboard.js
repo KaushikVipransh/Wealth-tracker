@@ -60,12 +60,36 @@ export async function getDashboardAnalytics() {
       value: categoryMap[key],
     })).sort((a, b) => b.value - a.value);
 
+    // 📈 Build last-6-months income vs expense series (pre-seeded so empty months still render)
+    const now = new Date();
+    const monthBuckets = [];
+    const bucketIndex = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      bucketIndex[key] = monthBuckets.length;
+      monthBuckets.push({
+        month: d.toLocaleDateString("en-IN", { month: "short" }).toUpperCase() + " " + String(d.getFullYear()).slice(2),
+        income: 0,
+        expense: 0,
+      });
+    }
+    transactions.forEach((tx) => {
+      const d = new Date(tx.date);
+      const idx = bucketIndex[`${d.getFullYear()}-${d.getMonth()}`];
+      if (idx === undefined) return; // older than 6 months
+      const amt = parseFloat(tx.amount);
+      if (tx.type === "INCOME") monthBuckets[idx].income += amt;
+      else monthBuckets[idx].expense += amt;
+    });
+
     return {
       success: true,
       totalAssetBalance,
       totalIncome,
       totalExpense,
       categoryBreakdown,
+      monthlySeries: monthBuckets,
       // 🎯 Serialize to strip Prisma Decimal / Date objects before crossing any RSC boundary
       recentTransactions: JSON.parse(JSON.stringify(transactions.slice(0, 5))),
     };

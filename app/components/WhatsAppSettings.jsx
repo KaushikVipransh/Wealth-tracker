@@ -255,7 +255,7 @@ export default function WhatsAppSettings() {
               fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
               color: "#A78BFA", fontStyle: "italic",
             }}>
-              "Spent 350 on fuel from sbi"
+              &quot;Spent 350 on fuel from sbi&quot;
             </div>
             <div style={{
               fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",

@@ -3,6 +3,23 @@
 import { useState, useEffect, startTransition } from "react";
 import { createTransaction, getUserTransactions } from "../actions/transaction";
 import { getUserAccounts } from "../actions/account";
+import ReceiptScanner from "../components/ReceiptScanner";
+
+// Local YYYY-MM-DD for the date input default
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const INITIAL_FORM = {
+  description: "",
+  amount: "",
+  type: "EXPENSE",
+  category: "FOOD",
+  date: "",
+  isRecurring: false,
+  recurringInterval: "MONTHLY",
+};
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Transaction Ledger
@@ -24,7 +41,23 @@ export default function TransactionPage() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [txStatus, setTxStatus] = useState(null); // null | { type: "success"|"error", message: string }
+  const [txStatus, setTxStatus] = useState(null); // null | { type: "success"|"error", title?: string, message: string }
+  const [formValues, setFormValues] = useState({ ...INITIAL_FORM, date: todayISO() });
+
+  const setField = (name, value) => setFormValues((v) => ({ ...v, [name]: value }));
+
+  // 📸 Receipt scanner → pre-fill the form for review (never auto-submits)
+  function handleScanComplete(data) {
+    setFormValues((v) => ({
+      ...v,
+      description: data.merchant ? `${data.merchant} — ${data.description}`.slice(0, 120) : data.description,
+      amount: String(data.amount),
+      type: "EXPENSE",
+      category: data.category,
+      date: data.date || v.date,
+    }));
+    setTxStatus({ type: "success", title: "RECEIPT PARSED", message: "Fields pre-filled from receipt — review & commit." });
+  }
 
   // 🇮🇳 Inline Indian Rupee (INR) Formatter Engine
   const formatINR = (amount) => {
@@ -54,6 +87,8 @@ export default function TransactionPage() {
   }
 
   useEffect(() => {
+    // loadData only sets state after its awaits resolve (async), not synchronously
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, []);
 
@@ -68,6 +103,7 @@ export default function TransactionPage() {
     if (result.success) {
       setTxStatus({ type: "success", message: "Transaction committed to ledger." });
       form.reset();
+      setFormValues({ ...INITIAL_FORM, date: todayISO() });
       startTransition(() => {
         loadData();
       });
@@ -218,7 +254,7 @@ export default function TransactionPage() {
                   color: txStatus.type === "success" ? "#10B981" : "#F43F5E",
                   marginBottom: "2px",
                 }}>
-                  {txStatus.type === "success" ? "TRANSACTION COMMITTED" : "WRITE FAILURE"}
+                  {txStatus.title || (txStatus.type === "success" ? "TRANSACTION COMMITTED" : "WRITE FAILURE")}
                 </div>
                 <div style={{
                   fontFamily: "JetBrains Mono, monospace",
@@ -249,6 +285,10 @@ export default function TransactionPage() {
               </div>
             </div>
           ) : (
+            <>
+            {/* 📸 AI Receipt Scanner — pre-fills the form below */}
+            <ReceiptScanner onScanComplete={handleScanComplete} />
+
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
               {/* Description */}
@@ -267,6 +307,8 @@ export default function TransactionPage() {
                   required
                   className="input-terminal"
                   id="tx-description"
+                  value={formValues.description}
+                  onChange={(e) => setField("description", e.target.value)}
                 />
               </div>
 
@@ -281,7 +323,11 @@ export default function TransactionPage() {
                     Type Vector
                   </label>
                   <div style={{ position: "relative" }}>
-                    <select name="type" required className="select-terminal" id="tx-type">
+                    <select
+                      name="type" required className="select-terminal" id="tx-type"
+                      value={formValues.type}
+                      onChange={(e) => setField("type", e.target.value)}
+                    >
                       <option value="EXPENSE">EXPENSE (−)</option>
                       <option value="INCOME">INCOME (+)</option>
                     </select>
@@ -311,8 +357,31 @@ export default function TransactionPage() {
                     required
                     className="input-terminal"
                     id="tx-amount"
+                    value={formValues.amount}
+                    onChange={(e) => setField("amount", e.target.value)}
                   />
                 </div>
+              </div>
+
+              {/* Entry Date */}
+              <div>
+                <label style={{
+                  display: "block", fontFamily: "JetBrains Mono, monospace",
+                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
+                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
+                }}>
+                  Entry Date
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  required
+                  className="input-terminal"
+                  id="tx-date"
+                  value={formValues.date}
+                  onChange={(e) => setField("date", e.target.value)}
+                  style={{ colorScheme: "dark" }}
+                />
               </div>
 
               {/* Category */}
@@ -325,7 +394,11 @@ export default function TransactionPage() {
                   Category Tag
                 </label>
                 <div style={{ position: "relative" }}>
-                  <select name="category" required className="select-terminal" id="tx-category">
+                  <select
+                    name="category" required className="select-terminal" id="tx-category"
+                    value={formValues.category}
+                    onChange={(e) => setField("category", e.target.value)}
+                  >
                     <option value="FOOD">FOOD &amp; DINING</option>
                     <option value="SHOPPING">SHOPPING</option>
                     <option value="ENTERTAINMENT">ENTERTAINMENT</option>
@@ -342,6 +415,65 @@ export default function TransactionPage() {
                     pointerEvents: "none",
                   }} />
                 </div>
+              </div>
+
+              {/* 🔁 Recurring Schedule */}
+              <div style={{
+                border: `1px solid ${formValues.isRecurring ? "rgba(167,139,250,0.35)" : "#1E293B"}`,
+                background: formValues.isRecurring ? "rgba(167,139,250,0.05)" : "rgba(30,41,59,0.15)",
+                padding: "14px 16px",
+                transition: "all 0.2s ease",
+              }}>
+                <label style={{
+                  display: "flex", alignItems: "center", gap: "10px",
+                  cursor: "pointer", userSelect: "none",
+                }}>
+                  <input
+                    type="checkbox"
+                    name="isRecurring"
+                    checked={formValues.isRecurring}
+                    onChange={(e) => setField("isRecurring", e.target.checked)}
+                    style={{ accentColor: "#A78BFA", width: "14px", height: "14px", cursor: "pointer" }}
+                  />
+                  <span style={{
+                    fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
+                    fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                    color: formValues.isRecurring ? "#A78BFA" : "#64748B",
+                  }}>
+                    ↻ RECURRING SCHEDULE
+                  </span>
+                </label>
+
+                {formValues.isRecurring && (
+                  <div style={{ marginTop: "12px", position: "relative" }}>
+                    <select
+                      name="recurringInterval"
+                      required
+                      className="select-terminal"
+                      id="tx-recurring-interval"
+                      value={formValues.recurringInterval}
+                      onChange={(e) => setField("recurringInterval", e.target.value)}
+                    >
+                      <option value="DAILY">DAILY</option>
+                      <option value="WEEKLY">WEEKLY</option>
+                      <option value="MONTHLY">MONTHLY</option>
+                      <option value="YEARLY">YEARLY</option>
+                    </select>
+                    <div style={{
+                      position: "absolute", right: "8px", top: "50%",
+                      transform: "translateY(-50%)",
+                      borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
+                      borderTop: "4px solid #A78BFA",
+                      pointerEvents: "none",
+                    }} />
+                    <p style={{
+                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
+                      color: "#334155", letterSpacing: "0.04em", marginTop: "6px",
+                    }}>
+                      Auto-replays via scheduler engine at each interval
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Target Account */}
@@ -385,6 +517,7 @@ export default function TransactionPage() {
                 {submitting ? "PROCESSING..." : "COMMIT TRANSACTION"}
               </button>
             </form>
+            </>
           )}
 
           {/* Status */}
@@ -514,8 +647,20 @@ export default function TransactionPage() {
                         <div style={{
                           fontWeight: 600, fontSize: "0.82rem", color: "#E2E8F0",
                           letterSpacing: "-0.01em", marginBottom: "2px",
+                          display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap",
                         }}>
                           {tx.description || "Uncategorized"}
+                          {tx.isRecurring && (
+                            <span style={{
+                              fontFamily: "JetBrains Mono, monospace", fontSize: "0.5rem",
+                              fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                              color: "#A78BFA", border: "1px solid rgba(167,139,250,0.35)",
+                              background: "rgba(167,139,250,0.08)", padding: "1px 6px",
+                              whiteSpace: "nowrap",
+                            }}>
+                              ↻ {tx.recurringInterval || "RECURRING"}
+                            </span>
+                          )}
                         </div>
                         <div style={{
                           fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",

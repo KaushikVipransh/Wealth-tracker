@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { DB } from "@/lib/prisma";
 import { parseWhatsAppMessage } from "@/lib/transactionParser";
 import { Prisma } from "@prisma/client";
+import { twimlResponse, normalizeWhatsAppPhone, normalizeCategory } from "@/lib/twilioUtils";
 
 export async function POST(request) {
   try {
@@ -12,13 +12,11 @@ export async function POST(request) {
     const body = params.get("Body");
 
     if (!rawFrom || !body) {
-      return new NextResponse("<Response></Response>", {
-        headers: { "Content-Type": "text/xml" },
-      });
+      return twimlResponse();
     }
 
     // Isolate clean phone digits (e.g. "whatsapp:+919876543210" → "919876543210")
-    const cleanPhone = rawFrom.replace("whatsapp:", "").replace(/\D/g, "");
+    const cleanPhone = normalizeWhatsAppPhone(rawFrom);
 
     // 2. Resolve the user from their linked phone number
     const user = await DB.user.findUnique({
@@ -26,34 +24,18 @@ export async function POST(request) {
     });
 
     if (!user) {
-      return new NextResponse(
-        `<Response><Message>❌ Integration Error: Phone number (${cleanPhone}) is not linked to any account. Please link it from your dashboard first.</Message></Response>`,
-        { headers: { "Content-Type": "text/xml" } }
-      );
+      return twimlResponse(`❌ Integration Error: Phone number (${cleanPhone}) is not linked to any account. Please link it from your dashboard first.`);
     }
 
     // 3. Route through our fortified hybrid engine (Gemini 2.5 with a Regex native backup)
     const parsed = await parseWhatsAppMessage(body);
 
     if (!parsed || !parsed.amount) {
-      return new NextResponse(
-        `<Response><Message>⚠️ Parse Failure: System could not identify a dollar value or numerical amount in your statement text. Try formatting as: "Burger 100 from pnb"</Message></Response>`,
-        { headers: { "Content-Type": "text/xml" } }
-      );
+      return twimlResponse(`⚠️ Parse Failure: System could not identify a dollar value or numerical amount in your statement text. Try formatting as: "Burger 100 from pnb"`);
     }
 
     // 4. Normalize category variables to the site-wide canonical enum set
-    const CATEGORY_ALIAS_MAP = {
-      BILLS: "UTILITIES",
-      INVESTMENTS: "INVESTMENT",
-    };
-    const VALID_CATEGORIES = new Set([
-      "FOOD", "SHOPPING", "ENTERTAINMENT", "UTILITIES",
-      "INVESTMENT", "SALARY", "OTHERS",
-    ]);
-    const rawCategory = (parsed.category || "OTHERS").toUpperCase();
-    const category = CATEGORY_ALIAS_MAP[rawCategory] ||
-      (VALID_CATEGORIES.has(rawCategory) ? rawCategory : "OTHERS");
+    const category = normalizeCategory(parsed.category);
 
     const type = parsed.type === "INCOME" ? "INCOME" : "EXPENSE";
     const amount = new Prisma.Decimal(parsed.amount);
@@ -79,10 +61,7 @@ export async function POST(request) {
     }
 
     if (!targetAccount) {
-      return new NextResponse(
-        `<Response><Message>❌ No account found: Please create at least one account card (e.g. "pnb") in your dashboard settings layout before syncing transactions.</Message></Response>`,
-        { headers: { "Content-Type": "text/xml" } }
-      );
+      return twimlResponse(`❌ No account found: Please create at least one account card (e.g. "pnb") in your dashboard settings layout before syncing transactions.`);
     }
 
     // 6. ⚛️ Atomic DB transaction — write ledger row + update account balance values
@@ -114,16 +93,10 @@ export async function POST(request) {
 
     // 7. Respond with a confirmation TwiML receipt card
     const sign = type === "INCOME" ? "+" : "-";
-    return new NextResponse(
-      `<Response><Message>✅ Ledger Sync Completed!\n\n📋 ${parsed.description}\n💰 ${sign}₹${parsed.amount}\n🏦 ${targetAccount.name.toUpperCase()}\n🏷️ ${category}\n\nYour production account balances have compiled dynamically.</Message></Response>`,
-      { headers: { "Content-Type": "text/xml" } }
-    );
+    return twimlResponse(`✅ Ledger Sync Completed!\n\n📋 ${parsed.description}\n💰 ${sign}₹${parsed.amount}\n🏦 ${targetAccount.name.toUpperCase()}\n🏷️ ${category}\n\nYour production account balances have compiled dynamically.`);
 
   } catch (err) {
     console.error("💥 WhatsApp Webhook Error:", err);
-    return new NextResponse(
-      `<Response><Message>⚠️ System Error Exception: ${err.message || "Unknown schema processing crash"}</Message></Response>`,
-      { headers: { "Content-Type": "text/xml" } }
-    );
+    return twimlResponse(`⚠️ System Error Exception: ${err.message || "Unknown schema processing crash"}`);
   }
 }

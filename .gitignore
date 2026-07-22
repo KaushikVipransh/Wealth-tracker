@@ -37,6 +37,9 @@ ehthumbs.db
 # 🚀 Vercel Deployment Footprints
 .vercel
 
+# 📋 Local planning docs
+FEATURE_PLAN.md
+
 # 🟦 TypeScript Compiling Cache
 *.tsbuildinfo
 next-env.d.ts

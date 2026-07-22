@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { getDashboardAnalytics } from "../actions/dashboard";
+import { getCurrentBudget } from "../actions/budget";
 import { syncUserToDatabase } from "../actions/user";
-import WhatsAppSettings from "../components/WhatsAppSettings"; 
+import BudgetPanel from "../components/BudgetPanel";
+import WhatsAppSettings from "../components/WhatsAppSettings";
+import CategoryDonut from "../components/charts/CategoryDonut";
+import CashflowBars from "../components/charts/CashflowBars";
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Financial Command Dashboard
@@ -13,6 +17,7 @@ export default async function DashboardPage() {
   await syncUserToDatabase();
 
   const result = await getDashboardAnalytics();
+  const budgetData = await getCurrentBudget();
 
   // 🇮🇳 Inline Indian Rupee (INR) Formatter Engine for Server Components
   const formatINR = (amount) => {
@@ -47,7 +52,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const { totalAssetBalance, totalIncome, totalExpense, categoryBreakdown, recentTransactions } = result;
+  const { totalAssetBalance, totalIncome, totalExpense, categoryBreakdown, monthlySeries, recentTransactions } = result;
 
   // 🧮 Calculate absolute combined transaction volume
   const totalTransactionVolume = categoryBreakdown.reduce((sum, cat) => sum + cat.value, 0);
@@ -174,6 +179,12 @@ export default async function DashboardPage() {
           indicatorColor="red"
         />
       </div>
+
+      {/* ── MONTHLY BUDGET SENTINEL ── */}
+      <BudgetPanel
+        initialBudget={budgetData.budget}
+        currentExpenses={budgetData.currentExpenses}
+      />
 
       {/* ── MAIN ANALYTICS GRID ── */}
       <div style={{
@@ -471,6 +482,95 @@ export default async function DashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── VISUAL ANALYTICS GRID — CHARTS ── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(300px, 1fr) minmax(0, 2fr)",
+        gap: "1px",
+        background: "#1E293B",
+        marginBottom: "1px",
+      }}>
+
+        {/* ── SPEND DISTRIBUTION DONUT ── */}
+        <div style={{
+          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
+          padding: "28px",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Corner marks */}
+          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #A78BFA", borderLeft:"1px solid #A78BFA", opacity:0.6 }} />
+          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #A78BFA", borderRight:"1px solid #A78BFA", opacity:0.6 }} />
+
+          {/* Header */}
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <div style={{ width: "3px", height: "16px", background: "#A78BFA", boxShadow: "0 0 8px rgba(167,139,250,0.6)" }} />
+              <h3 style={{
+                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
+                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                color: "#E2E8F0",
+              }}>
+                Spend Distribution Matrix
+              </h3>
+            </div>
+            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Category share · combined volume radial
+            </p>
+          </div>
+
+          <CategoryDonut data={categoryBreakdown} />
+        </div>
+
+        {/* ── CASHFLOW TIMELINE BARS ── */}
+        <div style={{
+          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
+          padding: "28px",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Corner marks */}
+          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #38BDF8", borderLeft:"1px solid #38BDF8", opacity:0.6 }} />
+          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #38BDF8", borderRight:"1px solid #38BDF8", opacity:0.6 }} />
+
+          {/* Header */}
+          <div style={{
+            display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+            marginBottom: "20px", gap: "16px",
+          }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <div style={{ width: "3px", height: "16px", background: "#38BDF8", boxShadow: "0 0 8px rgba(56,189,248,0.6)" }} />
+                <h3 style={{
+                  fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
+                  fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: "#E2E8F0",
+                }}>
+                  Cashflow Timeline — 6M
+                </h3>
+              </div>
+              <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Monthly inflow vs outflow · trailing 6 months
+              </p>
+            </div>
+
+            {/* Series legend */}
+            <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem", color: "#10B981", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: "5px" }}>
+                <span style={{ width: "7px", height: "7px", background: "#10B981", display: "inline-block" }} />
+                INFLOW
+              </span>
+              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem", color: "#F43F5E", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: "5px" }}>
+                <span style={{ width: "7px", height: "7px", background: "#F43F5E", display: "inline-block" }} />
+                OUTFLOW
+              </span>
+            </div>
+          </div>
+
+          <CashflowBars data={monthlySeries} />
         </div>
       </div>
 

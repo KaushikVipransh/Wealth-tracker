@@ -42,6 +42,10 @@ WealthOS is a precision financial tracking platform built for full control over 
 | 💬 | **WhatsApp AI Injection** | Natural-language transaction logging via Twilio + Gemini 2.5 Flash |
 | 🔐 | **Zero-trust Auth** | Clerk v7 JWT guards all protected routes at the middleware layer |
 | 🇮🇳 | **INR-native** | All monetary values formatted in Indian Rupee with Intl.NumberFormat |
+| 📸 | **AI Receipt Scanner** | Drop a receipt photo → Gemini 2.5 Flash Vision extracts amount, merchant, date & category → pre-fills the form |
+| 🔁 | **Recurring Engine** | Mark any transaction DAILY/WEEKLY/MONTHLY/YEARLY — an Inngest cron replays it atomically on schedule |
+| 💰 | **Budget Sentinel** | Set a monthly budget → live consumption meter on the dashboard + React Email alert via Resend at 80% |
+| 📊 | **Recharts Analytics** | Category distribution donut + 6-month cashflow bars, terminal-styled tooltips |
 
 ---
 
@@ -84,6 +88,16 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — sign up, and your database row is created automatically on first load.
+
+### 5 — Start the Inngest dev server (recurring engine + budget alerts)
+
+```bash
+npx inngest-cli@latest dev -u http://localhost:3000/api/inngest
+```
+
+Open the Inngest dashboard at [http://localhost:8288](http://localhost:8288) — both cron functions
+(`process-recurring-transactions`, `check-budget-alerts`) appear there and can be invoked manually
+for testing instead of waiting for their schedules. Requires `INNGEST_DEV=1` in `.env` (local only).
 
 ---
 
@@ -293,7 +307,10 @@ Global CSS classes (`btn-cyber`, `btn-ghost`, `input-terminal`, `select-terminal
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | ✅ | Set to `/sign-up` |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | ✅ | Post sign-in redirect *(Clerk v7)* |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | ✅ | Post sign-up redirect *(Clerk v7)* |
-| `GEMINI_API_KEY` | ✅ | Google AI Studio API key |
+| `GEMINI_API_KEY` | ✅ | Google AI Studio API key (WhatsApp parsing + receipt vision) |
+| `INNGEST_DEV` | dev only | Set to `1` locally; in production use `INNGEST_SIGNING_KEY` + `INNGEST_EVENT_KEY` instead |
+| `RESEND_API_KEY` | for alerts | [Resend](https://resend.com) API key — budget alert emails are skipped gracefully if unset |
+| `ALERT_EMAIL_FROM` | optional | Sender identity; defaults to `WealthOS <onboarding@resend.dev>` (delivers only to your own Resend account email until you verify a domain) |
 
 > [!WARNING]
 > Clerk v7 renamed the post-auth redirect variables. Using the old `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` keys will silently fail and cause 404s after login.

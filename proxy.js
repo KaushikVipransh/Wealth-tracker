@@ -9,7 +9,8 @@ const isProtectedRoute = createRouteMatcher([
 
 // 🌍 Explicit rule forcing Clerk to bypass webhook pathing checks completely
 const isWebhookRoute = createRouteMatcher([
-  "/api/webhook/whatsapp(.*)"
+  "/api/webhook/whatsapp(.*)",
+  "/api/inngest(.*)" // Inngest handshake/crons — secured by its own signing key in production
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -23,7 +24,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 });
 
-// 🛠️ Cleaned config matcher layout to prevent Next.js 16 / Turbopack compilation issues
+// 🛠️ Next 16 "proxy" file convention (successor to middleware.js) — same handler API
 export const config = {
   matcher: [
     /*
