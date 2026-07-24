@@ -7,9 +7,9 @@ import {
 import ChartTooltip from "./ChartTooltip";
 
 const TICK_STYLE = {
-  fill: "#64748B",
-  fontFamily: "JetBrains Mono, monospace",
-  fontSize: 10,
+  fill: "#6E6A63",
+  fontFamily: "Inter, sans-serif",
+  fontSize: 11,
 };
 
 /**
@@ -30,13 +30,10 @@ export default function CashflowBars({ data }) {
     return (
       <div style={{
         textAlign: "center", padding: "64px 24px",
-        border: "1px dashed #1E293B", margin: "8px 0",
+        border: "1px dashed #D9D4CB", borderRadius: "16px",
       }}>
-        <div style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-          color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-        }}>
-          NO DATA — TIMELINE OFFLINE
+        <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "#6E6A63" }}>
+          No activity in the last 6 months
         </div>
       </div>
     );
@@ -47,11 +44,11 @@ export default function CashflowBars({ data }) {
       {mounted && (
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid stroke="#1E293B" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="#E9E5DE" strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="month"
             tick={TICK_STYLE}
-            axisLine={{ stroke: "#1E293B" }}
+            axisLine={{ stroke: "#E9E5DE" }}
             tickLine={false}
           />
           <YAxis
@@ -64,11 +61,11 @@ export default function CashflowBars({ data }) {
             }
           />
           <Tooltip
-            cursor={{ fill: "rgba(59,130,246,0.04)" }}
+            cursor={{ fill: "rgba(255,60,0,0.04)" }}
             content={<ChartTooltip />}
           />
-          <Bar dataKey="income" name="INCOME" fill="#10B981" radius={[2, 2, 0, 0]} barSize={14} />
-          <Bar dataKey="expense" name="EXPENSE" fill="#F43F5E" radius={[2, 2, 0, 0]} barSize={14} />
+          <Bar dataKey="income" name="Income" fill="#16A34A" radius={[6, 6, 0, 0]} barSize={14} />
+          <Bar dataKey="expense" name="Expense" fill="#E0402F" radius={[6, 6, 0, 0]} barSize={14} />
         </BarChart>
       </ResponsiveContainer>
       )}

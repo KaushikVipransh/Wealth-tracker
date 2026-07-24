@@ -2,15 +2,25 @@ import Link from "next/link";
 import { getDashboardAnalytics } from "../actions/dashboard";
 import { getCurrentBudget } from "../actions/budget";
 import { syncUserToDatabase } from "../actions/user";
-import BudgetPanel from "../components/BudgetPanel";
 import WhatsAppSettings from "../components/WhatsAppSettings";
+import BudgetPanel from "../components/BudgetPanel";
 import CategoryDonut from "../components/charts/CategoryDonut";
 import CashflowBars from "../components/charts/CashflowBars";
 
 /* ────────────────────────────────────────────────────────────
-   WEALTHOS — Financial Command Dashboard
-   Dark-Cyber Terminal Aesthetic
+   WEALTHOS — Dashboard
+   Light fintech aesthetic
 ──────────────────────────────────────────────────────────── */
+
+const CATEGORY_META = [
+  { id: "FOOD",          name: "Food & dining",     color: "#E11D48" },
+  { id: "SHOPPING",      name: "Shopping",          color: "#D97706" },
+  { id: "ENTERTAINMENT", name: "Entertainment",     color: "#7C3AED" },
+  { id: "UTILITIES",     name: "Bills & utilities", color: "#0284C7" },
+  { id: "INVESTMENT",    name: "Investments",       color: "#059669" },
+  { id: "SALARY",        name: "Salary / income",   color: "#16A34A" },
+  { id: "OTHERS",        name: "Others",            color: "#475569" },
+];
 
 export default async function DashboardPage() {
   // 🔄 Upsert: creates the DB user row on first-ever login, no-op for returning users
@@ -31,22 +41,20 @@ export default async function DashboardPage() {
 
   if (!result.success) {
     return (
-      <div style={{ padding: "48px 24px", maxWidth: "1280px", margin: "0 auto" }}>
-        <div style={{
-          border: "1px solid rgba(244,63,94,0.3)",
-          background: "rgba(244,63,94,0.05)",
-          padding: "20px 24px",
-          display: "flex", alignItems: "flex-start", gap: "12px",
-        }}>
-          <span style={{ color: "#F43F5E", fontFamily: "JetBrains Mono, monospace", fontSize: "0.8rem" }}>ERR://</span>
-          <div>
-            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.75rem", color: "#F43F5E", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "4px" }}>
-              ANALYTICS ENGINE FAULT
-            </div>
-            <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.7rem", color: "#64748B" }}>
-              {result.error}
-            </div>
+      <div className="section" style={{ paddingTop: "48px" }}>
+        <div
+          role="alert"
+          style={{
+            background: "var(--expense-wash)",
+            color: "var(--expense)",
+            borderRadius: "16px",
+            padding: "20px 24px",
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: "4px" }}>
+            Couldn&apos;t load your dashboard
           </div>
+          <div style={{ fontSize: "0.85rem", opacity: 0.85 }}>{result.error}</div>
         </div>
       </div>
     );
@@ -57,650 +65,360 @@ export default async function DashboardPage() {
   // 🧮 Calculate absolute combined transaction volume
   const totalTransactionVolume = categoryBreakdown.reduce((sum, cat) => sum + cat.value, 0);
 
-  // 📈 Calculate high-level liquid savings health ratios
+  // 📈 High-level savings health ratios
   const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
-  const burnRate = totalIncome > 0 ? ((totalExpense / totalIncome) * 100) : 0;
+  const burnRate = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
 
   const isPositive = totalAssetBalance >= 0;
 
   return (
-    <div style={{
-      padding: "40px 24px 60px",
-      maxWidth: "1280px",
-      margin: "0 auto",
-      fontFamily: "Inter, system-ui, sans-serif",
-    }}>
+    <div className="section" style={{ paddingTop: "40px", paddingBottom: "64px" }}>
 
-      {/* ── HEADER ROW ── */}
-      <div style={{
-        display: "flex", alignItems: "flex-start", justifycontent: "space-between",
-        gap: "24px", marginBottom: "48px", flexWrap: "wrap",
-      }}>
+      {/* ── HEADER ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "16px",
+          marginBottom: "32px",
+          flexWrap: "wrap",
+        }}
+      >
         <div>
-          {/* Breadcrumb */}
-          <div style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-            color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase",
-            marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px",
-          }}>
-            <span style={{ color: "#3B82F6" }}>WEALTHOS</span>
-            <span>/</span>
-            <span>COMMAND CENTER</span>
-            <span>/</span>
-            <span style={{ color: "#64748B" }}>ANALYTICS</span>
-          </div>
-
-          <h1 style={{
-            fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 800,
-            letterSpacing: "-0.03em", color: "#E2E8F0", lineHeight: 1.1,
-            marginBottom: "8px",
-          }}>
-            Financial Command Center
-          </h1>
-          <p style={{ fontSize: "0.82rem", color: "#64748B", fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.02em" }}>
-            Real-time liquidity · wealth pools · budget allocation vectors
+          <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", marginBottom: "8px" }}>Dashboard</h1>
+          <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)" }}>
+            Here&apos;s where your money stands.
           </p>
         </div>
 
-        {/* Action buttons */}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          <Link href="/account" className="btn-ghost" style={{ textDecoration: "none" }}>
-            MANAGE ACCOUNTS
+          <Link href="/account" className="btn-secondary btn-sm" style={{ textDecoration: "none" }}>
+            Manage accounts
           </Link>
-          <Link href="/transaction" className="btn-cyber" style={{ textDecoration: "none" }}>
-            + LOG TRANSACTION
+          <Link href="/transaction" className="btn-primary btn-sm" style={{ textDecoration: "none" }}>
+            + Add transaction
           </Link>
         </div>
       </div>
 
       {/* ── METRICS ROW ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-        gap: "1px",
-        background: "#1E293B",
-        marginBottom: "1px",
-      }}>
-
-        {/* Net Worth Card */}
+      <div className="stat-row-featured" style={{ marginBottom: "24px" }}>
         <MetricCard
-          label="NET WORTH ALLOCATION"
-          subLabel="combined asset pools"
+          featured
+          label="Total balance"
           value={formatINR(totalAssetBalance)}
-          valueColor={isPositive ? "#10B981" : "#F43F5E"}
-          accent={isPositive ? "#10B981" : "#F43F5E"}
-          footer="Combined cash + checking − card liabilities"
-          indicator={isPositive ? "POSITIVE" : "DEFICIT"}
-          indicatorColor={isPositive ? "green" : "red"}
+          valueColor="#FFFFFF"
+          footer="Cash + savings − card balances"
+          tag={isPositive ? { text: "Positive", cls: "tag-green" } : { text: "In deficit", cls: "tag-red" }}
         />
-
-        {/* Income Card */}
         <MetricCard
-          label="TOTAL INFLOW STREAM"
-          subLabel="income channels"
+          label="Total income"
           value={`+${formatINR(totalIncome)}`}
-          valueColor="#10B981"
-          accent="#10B981"
-          footer={
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>SAVINGS RATE</span>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontWeight: 700,
-                color: savingsRate >= 20 ? "#10B981" : "#F59E0B",
-                textShadow: savingsRate >= 20 ? "0 0 10px rgba(16,185,129,0.4)" : "0 0 10px rgba(245,158,11,0.4)",
-              }}>
-                {savingsRate.toFixed(1)}%
-              </span>
-            </div>
-          }
-          indicator="LIVE"
-          indicatorColor="green"
+          valueColor="var(--income)"
+          footer={`Savings rate: ${savingsRate.toFixed(1)}%`}
+          tag={{ text: "Money in", cls: "tag-green" }}
         />
-
-        {/* Expense Card */}
         <MetricCard
-          label="TOTAL OUTFLOW VECTOR"
-          subLabel="expense channels"
-          value={`-${formatINR(totalExpense)}`}
-          valueColor="#F43F5E"
-          accent="#F43F5E"
-          footer={
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>BURN VELOCITY</span>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontWeight: 700,
-                color: burnRate > 80 ? "#F43F5E" : "#F59E0B",
-              }}>
-                {burnRate.toFixed(0)}% of income
-              </span>
-            </div>
-          }
-          indicator="TRACKED"
-          indicatorColor="red"
+          label="Total spent"
+          value={`−${formatINR(totalExpense)}`}
+          valueColor="var(--expense)"
+          footer={`${burnRate.toFixed(0)}% of income spent`}
+          tag={{ text: "Money out", cls: "tag-red" }}
         />
       </div>
 
-      {/* ── MONTHLY BUDGET SENTINEL ── */}
-      <BudgetPanel
-        initialBudget={budgetData.budget}
-        currentExpenses={budgetData.currentExpenses}
-      />
+      {/* ── MONTHLY BUDGET ── */}
+      <div style={{ marginBottom: "24px" }}>
+        <BudgetPanel
+          initialBudget={budgetData.budget}
+          currentExpenses={budgetData.currentExpenses}
+        />
+      </div>
 
-      {/* ── MAIN ANALYTICS GRID ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(300px, 1fr) minmax(0, 2fr)",
-        gap: "1px",
-        background: "#1E293B",
-        marginBottom: "1px",
-      }}>
+      {/* ── ANALYTICS GRID ── */}
+      <div className="layout-half" style={{ marginBottom: "24px" }}>
 
-        {/* ── CASH FLOW ALLOCATION PANEL ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #3B82F6", borderLeft:"1px solid #3B82F6", opacity:0.6 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #3B82F6", borderRight:"1px solid #3B82F6", opacity:0.6 }} />
-
-          {/* Header */}
-          <div style={{ marginBottom: "28px" }}>
-            <div style={{
-              display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px",
-            }}>
-              <div style={{ width: "3px", height: "16px", background: "#3B82F6", boxShadow: "0 0 8px rgba(59,130,246,0.6)" }} />
-              <h3 style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#E2E8F0",
-              }}>
-                Cash Flow Allocation
-              </h3>
-            </div>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Telemetry gauges · spending vector analysis
+        {/* Spending by category */}
+        <div className="card">
+          <div style={{ marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Spending by category</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Share of your total activity
             </p>
           </div>
 
-          {/* Category Meters */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {[
-              { id: "FOOD",          name: "Food & Dining",      icon: "◈", color: "#F43F5E" },
-              { id: "SHOPPING",      name: "Shopping",           icon: "◈", color: "#F59E0B" },
-              { id: "ENTERTAINMENT", name: "Entertainment",      icon: "◈", color: "#A78BFA" },
-              { id: "UTILITIES",     name: "Bills & Utilities",  icon: "◈", color: "#38BDF8" },
-              { id: "INVESTMENT",    name: "Investments",        icon: "◈", color: "#10B981" },
-              { id: "SALARY",        name: "Salary / Income",   icon: "◈", color: "#34D399" },
-              { id: "OTHERS",        name: "Others / Misc",      icon: "◈", color: "#64748B" },
-            ].map((masterCategory) => {
-              const matchedData = categoryBreakdown.find((c) => c.name === masterCategory.id);
-              const categoryTotal = matchedData ? matchedData.value : 0;
-
-              // 🛡️ Scales perfectly against the dynamic baseline volume sum
-              const allocationPercentage = totalTransactionVolume > 0
-                ? (categoryTotal / totalTransactionVolume) * 100
-                : 0;
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {CATEGORY_META.map((cat) => {
+              const matched = categoryBreakdown.find((c) => c.name === cat.id);
+              const categoryTotal = matched ? matched.value : 0;
+              const pct = totalTransactionVolume > 0 ? (categoryTotal / totalTransactionVolume) * 100 : 0;
 
               return (
-                <div key={masterCategory.id}>
-                  {/* Label row */}
-                  <div style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    marginBottom: "6px",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ color: masterCategory.color, fontSize: "0.7rem" }}>{masterCategory.icon}</span>
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem",
-                        color: "#94A3B8", letterSpacing: "0.04em", textTransform: "uppercase",
-                        fontWeight: 500,
-                      }}>
-                        {masterCategory.name}
-                      </span>
-                    </div>
-                    <span style={{
-                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                      fontWeight: 700, color: "#E2E8F0",
-                    }}>
+                <div key={cat.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "6px",
+                      gap: "8px",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--text-body)" }}>
+                      <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: cat.color, flexShrink: 0 }} />
+                      {cat.name}
+                    </span>
+                    <span className="num" style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-heading)" }}>
                       {formatINR(categoryTotal)}
                     </span>
                   </div>
-
-                  {/* Thin meter track */}
-                  <div style={{
-                    width: "100%", height: "2px",
-                    background: "rgba(30,41,59,0.8)",
-                    position: "relative", overflow: "hidden",
-                  }}>
-                    <div style={{
-                      height: "100%",
-                      width: `${allocationPercentage}%`,
-                      background: `linear-gradient(90deg, ${masterCategory.color}, ${masterCategory.color}CC)`,
-                      boxShadow: `0 0 6px ${masterCategory.color}80`,
-                      transition: "width 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                    }} />
-                  </div>
-
-                  {/* Percentage label */}
-                  <div style={{ textAlign: "right", marginTop: "3px" }}>
-                    <span style={{
-                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                      color: "#334155", letterSpacing: "0.04em",
-                    }}>
-                      {allocationPercentage.toFixed(1)}% of total volume
-                    </span>
+                  <div className="meter-track">
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${pct}%`,
+                        background: cat.color,
+                        borderRadius: "999px",
+                        transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                      }}
+                    />
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Bottom total */}
           {totalTransactionVolume > 0 && (
-            <div style={{
-              marginTop: "28px",
-              paddingTop: "16px",
-              borderTop: "1px solid #1E293B",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-            }}>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                TOTAL VOLUME
-              </span>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.72rem",
-                fontWeight: 700, color: "#3B82F6",
-                textShadow: "0 0 12px rgba(59,130,246,0.4)",
-              }}>
+            <div
+              style={{
+                marginTop: "20px",
+                paddingTop: "16px",
+                borderTop: "1px solid var(--border)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Total volume</span>
+              <span className="num" style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-heading)" }}>
                 {formatINR(totalTransactionVolume)}
               </span>
             </div>
           )}
         </div>
 
-        {/* ── RECENT TRANSACTIONS LEDGER ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #10B981", borderLeft:"1px solid #10B981", opacity:0.6 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #10B981", borderRight:"1px solid #10B981", opacity:0.6 }} />
-
-          {/* Header */}
-          <div style={{
-            display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-            marginBottom: "28px", gap: "16px",
-          }}>
+        {/* Recent transactions */}
+        <div className="card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
+              gap: "12px",
+            }}
+          >
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                <div style={{ width: "3px", height: "16px", background: "#10B981", boxShadow: "0 0 8px rgba(16,185,129,0.6)" }} />
-                <h3 style={{
-                  fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                  fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: "#E2E8F0",
-                }}>
-                  Recent Account Activity
-                </h3>
-              </div>
-              <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Live stream · latest 5 transactions
-              </p>
+              <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Recent transactions</h3>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Latest 5 entries</p>
             </div>
             <Link
               href="/transaction"
               style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--brand)",
                 textDecoration: "none",
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: "0.6rem", color: "#3B82F6",
-                letterSpacing: "0.08em", textTransform: "uppercase",
-                display: "flex", alignItems: "center", gap: "6px",
-                flexShrink: 0,
-                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
               }}
             >
-              VIEW ALL →
+              View all →
             </Link>
           </div>
 
-          {/* Ledger table header */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto auto auto",
-            gap: "16px",
-            padding: "6px 12px",
-            background: "rgba(30,41,59,0.3)",
-            borderTop: "1px solid #1E293B",
-            borderBottom: "1px solid #1E293B",
-            marginBottom: "4px",
-          }}>
-            {["DESCRIPTION", "CATEGORY", "DATE", "AMOUNT"].map((h) => (
-              <span key={h} style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600,
-              }}>
-                {h}
-              </span>
-            ))}
-          </div>
-
-          {/* Ledger rows */}
           {recentTransactions.length === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "64px 24px",
-              border: "1px dashed #1E293B",
-              margin: "8px 0",
-            }}>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-                marginBottom: "8px",
-              }}>
-                NO TRANSACTION RECORDS FOUND
+            <div
+              style={{
+                textAlign: "center",
+                padding: "56px 24px",
+                border: "1px dashed var(--border-strong)",
+                borderRadius: "16px",
+              }}
+            >
+              <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                No transactions yet
               </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#1E293B" }}>
-                Initialize ledger by logging your first transaction entry
+              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                Log your first one to see it here.
               </div>
             </div>
           ) : (
             <div>
-              {recentTransactions.map((tx, idx) => (
-                <div
-                  key={tx.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto auto auto",
-                    gap: "16px",
-                    padding: "14px 12px",
-                    borderBottom: "1px solid rgba(30,41,59,0.5)",
-                    alignItems: "center",
-                    transition: "background 0.15s ease",
-                    cursor: "default",
-                  }}
-                  className="ledger-row"
-                >
-                  <style>{`
-                    .ledger-row:hover {
-                      background: rgba(59,130,246,0.04) !important;
-                    }
-                  `}</style>
-
-                  {/* Description */}
-                  <div>
-                    <div style={{
-                      fontWeight: 600, fontSize: "0.82rem", color: "#E2E8F0",
-                      marginBottom: "2px", letterSpacing: "-0.01em",
-                    }}>
-                      {tx.description || "Uncategorized Transaction"}
-                    </div>
-                    <div style={{
-                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                      color: "#334155", letterSpacing: "0.04em",
-                    }}>
-                      ID_{tx.id.slice(0, 8).toUpperCase()}
-                    </div>
+              {recentTransactions.map((tx) => {
+                const meta = CATEGORY_META.find((c) => c.id === tx.category) || CATEGORY_META[6];
+                return (
+                  <div key={tx.id} className="ledger-row">
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        fontSize: "0.9rem",
+                        color: "var(--text-heading)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {tx.description || "Untitled"}
+                    </span>
+                    <span className="lr-meta">
+                      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        {new Date(tx.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </span>
+                      <span className="tag" style={{ background: `${meta.color}14`, color: meta.color }}>
+                        {meta.name}
+                      </span>
+                    </span>
+                    <span
+                      className={`num ${tx.type === "INCOME" ? "value-green" : "value-red"}`}
+                      style={{ fontWeight: 700, fontSize: "0.95rem", whiteSpace: "nowrap" }}
+                    >
+                      {tx.type === "INCOME" ? "+" : "−"}
+                      {formatINR(tx.amount).replace("INR", "").trim()}
+                    </span>
                   </div>
-
-                  {/* Category tag */}
-                  <span style={{
-                    fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                    fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
-                    color: "#64748B", border: "1px solid #1E293B",
-                    background: "rgba(30,41,59,0.4)", padding: "2px 8px",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {tx.category}
-                  </span>
-
-                  {/* Date */}
-                  <span style={{
-                    fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem",
-                    color: "#64748B", whiteSpace: "nowrap",
-                  }}>
-                    {new Date(tx.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                  </span>
-
-                  {/* Amount */}
-                  <span style={{
-                    fontFamily: "JetBrains Mono, monospace",
-                    fontSize: "0.88rem", fontWeight: 700,
-                    color: tx.type === "INCOME" ? "#10B981" : "#F43F5E",
-                    textShadow: tx.type === "INCOME"
-                      ? "0 0 10px rgba(16,185,129,0.4)"
-                      : "0 0 10px rgba(244,63,94,0.4)",
-                    letterSpacing: "-0.01em",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {tx.type === "INCOME" ? "+" : "−"}
-                    {formatINR(tx.amount).replace("INR", "").trim()}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* ── VISUAL ANALYTICS GRID — CHARTS ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(300px, 1fr) minmax(0, 2fr)",
-        gap: "1px",
-        background: "#1E293B",
-        marginBottom: "1px",
-      }}>
-
-        {/* ── SPEND DISTRIBUTION DONUT ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #A78BFA", borderLeft:"1px solid #A78BFA", opacity:0.6 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #A78BFA", borderRight:"1px solid #A78BFA", opacity:0.6 }} />
-
-          {/* Header */}
-          <div style={{ marginBottom: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-              <div style={{ width: "3px", height: "16px", background: "#A78BFA", boxShadow: "0 0 8px rgba(167,139,250,0.6)" }} />
-              <h3 style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#E2E8F0",
-              }}>
-                Spend Distribution Matrix
-              </h3>
-            </div>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Category share · combined volume radial
-            </p>
+      {/* ── CHARTS ── */}
+      <div className="layout-half" style={{ marginBottom: "40px" }}>
+        <div className="card">
+          <div style={{ marginBottom: "16px" }}>
+            <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Where it went</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Category share of volume</p>
           </div>
-
           <CategoryDonut data={categoryBreakdown} />
         </div>
 
-        {/* ── CASHFLOW TIMELINE BARS ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #38BDF8", borderLeft:"1px solid #38BDF8", opacity:0.6 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #38BDF8", borderRight:"1px solid #38BDF8", opacity:0.6 }} />
-
-          {/* Header */}
-          <div style={{
-            display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-            marginBottom: "20px", gap: "16px",
-          }}>
+        <div className="card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: "16px",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
+          >
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                <div style={{ width: "3px", height: "16px", background: "#38BDF8", boxShadow: "0 0 8px rgba(56,189,248,0.6)" }} />
-                <h3 style={{
-                  fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                  fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: "#E2E8F0",
-                }}>
-                  Cashflow Timeline — 6M
-                </h3>
-              </div>
-              <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Monthly inflow vs outflow · trailing 6 months
-              </p>
+              <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Cash flow</h3>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Last 6 months</p>
             </div>
-
-            {/* Series legend */}
-            <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem", color: "#10B981", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ width: "7px", height: "7px", background: "#10B981", display: "inline-block" }} />
-                INFLOW
+            <div style={{ display: "flex", gap: "12px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--income)" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "var(--income)" }} />
+                Income
               </span>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem", color: "#F43F5E", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ width: "7px", height: "7px", background: "#F43F5E", display: "inline-block" }} />
-                OUTFLOW
+              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--expense)" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "999px", background: "var(--expense)" }} />
+                Expense
               </span>
             </div>
           </div>
-
           <CashflowBars data={monthlySeries} />
         </div>
       </div>
 
-      {/* 🚀 ── WHATSAPP SYSTEM INTEGRATION ENTRY CORE VECTOR ── */}
-      <div style={{
-        marginTop: "48px",
-        marginBottom: "48px"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-          <div style={{ width: "3px", height: "16px", background: "#A78BFA", boxShadow: "0 0 8px rgba(167,139,250,0.6)" }} />
-          <h2 style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.75rem",
-            fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-            color: "#E2E8F0"
-          }}>
-            SYSTEM_INTEGRATION_PIPELINES
-          </h2>
-        </div>
+      {/* ── WHATSAPP INTEGRATION ── */}
+      <div style={{ marginBottom: "40px" }}>
         <WhatsAppSettings />
       </div>
 
-      {/* ── QUICK ACTION STRIP ── */}
-      <div style={{
-        background: "linear-gradient(90deg, rgba(13,20,32,0.9), rgba(15,24,37,0.9))",
-        border: "1px solid #1E293B",
-        padding: "16px 28px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "12px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <span className="status-live" style={{ fontSize: "0.6rem", fontFamily: "JetBrains Mono, monospace", color: "#10B981", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            <span className="status-live-dot" />
-            DATABASE SYNC: LIVE
-          </span>
-          <span style={{ width: "1px", height: "16px", background: "#1E293B" }} />
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {recentTransactions.length} RECENT ENTRIES LOADED
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link href="/transaction" className="btn-cyber" style={{ textDecoration: "none", fontSize: "0.7rem", padding: "8px 16px" }}>
-            + ADD ENTRY
+      {/* ── QUICK ACTIONS ── */}
+      <div
+        className="card-muted"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px",
+        }}
+      >
+        <span className="status-live" style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+          <span className="dot-live" />
+          Everything synced · {recentTransactions.length} recent entries
+        </span>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <Link href="/transaction" className="btn-secondary btn-sm" style={{ textDecoration: "none" }}>
+            Add transaction
+          </Link>
+          <Link href="/account" className="btn-secondary btn-sm" style={{ textDecoration: "none" }}>
+            Add account
           </Link>
         </div>
       </div>
-
     </div>
   );
 }
 
 /* ────────────────────────────────────────────────────────────
-   METRIC CARD COMPONENT
+   METRIC CARD
 ──────────────────────────────────────────────────────────── */
-function MetricCard({ label, subLabel, value, valueColor, accent, footer, indicator, indicatorColor }) {
-  const indicatorColors = {
-    green: { color: "#10B981", bg: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.3)" },
-    red: { color: "#F43F5E", bg: "rgba(244,63,94,0.06)", border: "rgba(244,63,94,0.3)" },
-    blue: { color: "#3B82F6", bg: "rgba(59,130,246,0.06)", border: "rgba(59,130,246,0.3)" },
-  };
-  const ic = indicatorColors[indicatorColor] || indicatorColors.blue;
-
+function MetricCard({ label, value, valueColor, footer, tag, featured }) {
   return (
-    <div style={{
-      background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-      padding: "24px 28px",
-      position: "relative",
-      overflow: "hidden",
-    }}>
-      {/* Corner marks */}
-      <span style={{ position:"absolute", top:"0", left:"0", width:"10px", height:"10px", borderTop:`1px solid ${accent}`, borderLeft:`1px solid ${accent}`, opacity:0.6 }} />
-
-      {/* Background accent glow */}
-      <div style={{
-        position: "absolute", top: 0, right: 0,
-        width: "120px", height: "120px",
-        background: `radial-gradient(ellipse at top right, ${accent}08 0%, transparent 70%)`,
-        pointerEvents: "none",
-      }} />
-
-      {/* Status indicator */}
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-        fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
-        color: ic.color, border: `1px solid ${ic.border}`, background: ic.bg,
-        padding: "2px 7px", marginBottom: "16px",
-      }}>
-        {indicatorColor === "green" && <span className="status-live-dot" style={{ width: "5px", height: "5px" }} />}
-        {indicator}
+    <div
+      className="card"
+      style={featured ? { background: "var(--brand)", border: "none" } : undefined}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+          gap: "8px",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "0.85rem",
+            fontWeight: 500,
+            color: featured ? "rgba(255,255,255,0.85)" : "var(--text-secondary)",
+          }}
+        >
+          {label}
+        </span>
+        {tag && <span className={`tag ${tag.cls}`}>{tag.text}</span>}
       </div>
 
-      {/* Label */}
-      <div style={{
-        fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-        letterSpacing: "0.1em", textTransform: "uppercase",
-        color: "#64748B", fontWeight: 600, marginBottom: "4px",
-      }}>
-        {label}
-      </div>
-      <div style={{
-        fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-        color: "#334155", letterSpacing: "0.06em", marginBottom: "12px",
-      }}>
-        {subLabel}
-      </div>
-
-      {/* Value */}
-      <div style={{
-        fontFamily: "JetBrains Mono, monospace",
-        fontSize: "clamp(1.4rem, 2.5vw, 1.9rem)",
-        fontWeight: 700,
-        color: valueColor,
-        textShadow: `0 0 20px ${valueColor}40`,
-        letterSpacing: "-0.02em",
-        lineHeight: 1.1,
-        marginBottom: "16px",
-      }}>
+      <div
+        className="num"
+        style={{
+          fontSize: featured ? "clamp(1.9rem, 3.5vw, 2.4rem)" : "clamp(1.4rem, 2.5vw, 1.75rem)",
+          fontWeight: 800,
+          color: valueColor,
+          lineHeight: 1.15,
+          marginBottom: "12px",
+          overflowWrap: "anywhere",
+        }}
+      >
         {value}
       </div>
 
-      {/* Footer */}
-      <div style={{
-        borderTop: "1px solid #1E293B",
-        paddingTop: "12px",
-        fontFamily: "JetBrains Mono, monospace",
-        fontSize: "0.6rem", color: "#64748B", letterSpacing: "0.04em",
-      }}>
+      <div
+        style={{
+          borderTop: featured ? "1px solid rgba(255,255,255,0.2)" : "1px solid var(--border)",
+          paddingTop: "10px",
+          fontSize: "0.8rem",
+          color: featured ? "rgba(255,255,255,0.75)" : "var(--text-muted)",
+        }}
+      >
         {footer}
       </div>
     </div>

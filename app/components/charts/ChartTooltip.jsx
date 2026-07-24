@@ -3,7 +3,7 @@
 import { formatINR } from "@/lib/utils";
 
 /**
- * Shared Recharts custom tooltip — styled like a terminal card.
+ * Shared Recharts custom tooltip — light card styling.
  * Works for both Pie (single entry) and Bar/Line (multi-series) charts.
  */
 export default function ChartTooltip({ active, payload, label }) {
@@ -11,15 +11,17 @@ export default function ChartTooltip({ active, payload, label }) {
 
   return (
     <div style={{
-      background: "#0D1420",
-      border: "1px solid #1E293B",
+      background: "#FFFFFF",
+      border: "1px solid #E9E5DE",
+      borderRadius: "12px",
       padding: "10px 14px",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+      boxShadow: "0 8px 24px rgba(20,15,10,0.12)",
     }}>
       {label && (
         <div style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-          color: "#64748B", letterSpacing: "0.08em", textTransform: "uppercase",
+          fontSize: "0.7rem",
+          fontWeight: 600,
+          color: "#6E6A63",
           marginBottom: "6px",
         }}>
           {label}
@@ -31,19 +33,21 @@ export default function ChartTooltip({ active, payload, label }) {
           gap: "16px", marginTop: idx === 0 ? 0 : "4px",
         }}>
           <span style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-            color: "#94A3B8", letterSpacing: "0.06em", textTransform: "uppercase",
+            fontSize: "0.75rem",
+            color: "#6E6A63",
             display: "flex", alignItems: "center", gap: "6px",
           }}>
             <span style={{
-              width: "7px", height: "7px", display: "inline-block",
-              background: entry.payload?.fill || entry.color || entry.fill || "#3B82F6",
+              width: "8px", height: "8px", borderRadius: "999px", display: "inline-block",
+              background: entry.payload?.fill || entry.color || entry.fill || "#F0492A",
             }} />
             {entry.name}
           </span>
           <span style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.68rem",
-            fontWeight: 700, color: "#E2E8F0",
+            fontSize: "0.8rem",
+            fontWeight: 700,
+            fontVariantNumeric: "tabular-nums",
+            color: "#17130F",
           }}>
             {formatINR(entry.value)}
           </span>

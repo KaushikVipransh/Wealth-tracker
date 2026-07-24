@@ -6,14 +6,17 @@ import ChartTooltip from "./ChartTooltip";
 import { formatINR } from "@/lib/utils";
 
 const CATEGORY_COLORS = {
-  FOOD: "#F43F5E",
-  SHOPPING: "#F59E0B",
-  ENTERTAINMENT: "#A78BFA",
-  UTILITIES: "#38BDF8",
-  INVESTMENT: "#10B981",
-  SALARY: "#34D399",
-  OTHERS: "#64748B",
+  FOOD: "#E11D48",
+  SHOPPING: "#D97706",
+  ENTERTAINMENT: "#7C3AED",
+  UTILITIES: "#0284C7",
+  INVESTMENT: "#059669",
+  SALARY: "#16A34A",
+  OTHERS: "#475569",
 };
+
+// "FOOD" → "Food"
+const label = (name) => name.charAt(0) + name.slice(1).toLowerCase();
 
 /**
  * Category spend distribution donut.
@@ -31,13 +34,10 @@ export default function CategoryDonut({ data }) {
     return (
       <div style={{
         textAlign: "center", padding: "64px 24px",
-        border: "1px dashed #1E293B", margin: "8px 0",
+        border: "1px dashed #D9D4CB", borderRadius: "16px",
       }}>
-        <div style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-          color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-        }}>
-          NO DATA — DISTRIBUTION OFFLINE
+        <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "#6E6A63" }}>
+          No spending yet
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function CategoryDonut({ data }) {
               innerRadius={60}
               outerRadius={85}
               paddingAngle={2}
-              stroke="#090D16"
+              stroke="#FFFFFF"
               strokeWidth={2}
             >
               {data.map((entry) => (
@@ -81,43 +81,42 @@ export default function CategoryDonut({ data }) {
           alignItems: "center", justifyContent: "center",
           pointerEvents: "none",
         }}>
-          <span style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.5rem",
-            color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase",
-            marginBottom: "4px",
-          }}>
-            TOTAL VOLUME
+          <span style={{ fontSize: "0.7rem", color: "#A29C92", marginBottom: "4px" }}>
+            Total spent
           </span>
           <span style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.85rem",
-            fontWeight: 700, color: "#3B82F6",
-            textShadow: "0 0 12px rgba(59,130,246,0.4)",
+            fontSize: "1rem",
+            fontWeight: 700,
+            fontVariantNumeric: "tabular-nums",
+            color: "#17130F",
           }}>
             {formatINR(total)}
           </span>
         </div>
       </div>
 
-      {/* Legend as terminal tags */}
+      {/* Legend as pills */}
       <div style={{
         display: "flex", flexWrap: "wrap", gap: "6px",
         marginTop: "16px", justifyContent: "center",
       }}>
-        {data.map((entry) => (
-          <span key={entry.name} style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-            fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-            color: CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.OTHERS,
-            border: "1px solid #1E293B", background: "rgba(30,41,59,0.4)",
-            padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: "5px",
-          }}>
-            <span style={{
-              width: "6px", height: "6px",
-              background: CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.OTHERS,
-            }} />
-            {entry.name}
-          </span>
-        ))}
+        {data.map((entry) => {
+          const color = CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.OTHERS;
+          return (
+            <span key={entry.name} style={{
+              fontSize: "0.7rem",
+              fontWeight: 600,
+              color,
+              background: `${color}14`,
+              borderRadius: "999px",
+              padding: "3px 10px",
+              display: "inline-flex", alignItems: "center", gap: "5px",
+            }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "999px", background: color }} />
+              {label(entry.name)}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

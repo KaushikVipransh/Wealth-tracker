@@ -4,6 +4,12 @@ import { UserButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useState } from "react";
 
+const NAV_LINKS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/account", label: "Accounts" },
+  { href: "/transaction", label: "Transactions" },
+];
+
 export default function Navbar() {
   const { isSignedIn, isLoaded } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -14,36 +20,28 @@ export default function Navbar() {
         position: "sticky",
         top: 0,
         zIndex: 50,
-        borderBottom: "1px solid #1E293B",
-        background: "rgba(9, 13, 22, 0.92)",
+        borderBottom: "1px solid var(--border)",
+        background: "rgba(255, 255, 255, 0.85)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
       }}
     >
-      {/* Top accent line */}
       <div
         style={{
-          height: "1px",
-          background: "linear-gradient(90deg, transparent 0%, #3B82F6 40%, #10B981 60%, transparent 100%)",
-          opacity: 0.5,
-        }}
-      />
-
-      <div
-        style={{
-          maxWidth: "1280px",
+          maxWidth: "1200px",
           margin: "0 auto",
-          padding: "0 24px",
-          height: "56px",
+          padding: "0 20px",
+          height: "64px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "32px",
+          gap: "24px",
         }}
       >
         {/* ── Logo / Brand ── */}
         <Link
           href="/"
+          onClick={() => setMobileOpen(false)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -52,155 +50,161 @@ export default function Navbar() {
             flexShrink: 0,
           }}
         >
-          {/* Logo mark */}
           <div
             style={{
               width: "28px",
               height: "28px",
-              border: "1px solid rgba(59,130,246,0.6)",
+              borderRadius: "8px",
+              background: "var(--brand)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              position: "relative",
               flexShrink: 0,
             }}
           >
-            <div
-              style={{
-                width: "10px",
-                height: "10px",
-                background: "#3B82F6",
-                boxShadow: "0 0 10px #3B82F6, 0 0 20px rgba(59,130,246,0.4)",
-              }}
-            />
-            {/* Corner marks */}
-            <span style={{ position:"absolute", top:"-1px", left:"-1px", width:"5px", height:"5px", borderTop:"1px solid #10B981", borderLeft:"1px solid #10B981" }} />
-            <span style={{ position:"absolute", bottom:"-1px", right:"-1px", width:"5px", height:"5px", borderBottom:"1px solid #10B981", borderRight:"1px solid #10B981" }} />
-          </div>
-
-          <div>
-            <span
-              style={{
-                fontFamily: "JetBrains Mono, monospace",
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                letterSpacing: "0.1em",
-                color: "#E2E8F0",
-                textTransform: "uppercase",
-              }}
-            >
-              WEALTH
-              <span style={{ color: "#3B82F6" }}>OS</span>
+            <span style={{ color: "#FFFFFF", fontWeight: 800, fontSize: "0.85rem", lineHeight: 1 }}>
+              W
             </span>
           </div>
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: "1.05rem",
+              letterSpacing: "-0.02em",
+              color: "var(--text-heading)",
+            }}
+          >
+            WealthOS
+          </span>
         </Link>
 
-        {/* ── Center nav links ── */}
-        <nav
-          className="hidden md:flex"
-          style={{ display: "flex", alignItems: "center", gap: "4px" }}
-        >
-          {[
-            { href: "/dashboard", label: "COMMAND", sub: "dashboard" },
-            { href: "/account",   label: "ACCOUNTS", sub: "portfolios" },
-            { href: "/transaction", label: "LEDGER",   sub: "transactions" },
-          ].map((item) => (
-            <NavLink key={item.href} href={item.href} label={item.label} sub={item.sub} />
+        {/* ── Center nav links (desktop) ── */}
+        <nav className="hidden md:flex" style={{ alignItems: "center", gap: "4px" }}>
+          {NAV_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="btn-ghost btn-sm"
+              style={{ textDecoration: "none", fontWeight: 500, fontSize: "0.9rem" }}
+            >
+              {item.label}
+            </Link>
           ))}
         </nav>
 
-        {/* ── Right: Auth / User ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-          {/* Live indicator */}
-          <span
-            className="status-live hidden md:flex"
-            style={{
-              fontSize: "0.6rem",
-              fontFamily: "JetBrains Mono, monospace",
-              color: "#10B981",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-            }}
-          >
-            <span className="status-live-dot" />
-            LIVE
-          </span>
-
+        {/* ── Right: Auth / User + hamburger ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
           {!isLoaded ? (
             <div
               style={{
                 width: "32px",
                 height: "32px",
-                border: "1px solid #1E293B",
-                background: "#0D1420",
-                animation: "pulse 1.5s ease-in-out infinite",
+                borderRadius: "999px",
+                background: "var(--bg-card-muted)",
               }}
             />
           ) : isSignedIn ? (
-            <div
+            <UserButton afterSignOutUrl="/" userProfileUrl="/dashboard" />
+          ) : (
+            <Link
+              href="/sign-in"
+              className="btn-primary btn-sm"
+              style={{ textDecoration: "none" }}
+            >
+              Sign in
+            </Link>
+          )}
+
+          {/* Hamburger (mobile only) */}
+          <button
+            type="button"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
+            className="md:hidden"
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "none",
+              background: "transparent",
+              borderRadius: "999px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "5px",
+              cursor: "pointer",
+            }}
+          >
+            <span
               style={{
-                border: "1px solid #1E293B",
-                padding: "2px",
-                background: "rgba(59,130,246,0.06)",
+                width: "18px",
+                height: "2px",
+                borderRadius: "2px",
+                background: "var(--text-heading)",
+                transition: "transform 0.2s ease",
+                transform: mobileOpen ? "translateY(3.5px) rotate(45deg)" : "none",
+              }}
+            />
+            <span
+              style={{
+                width: "18px",
+                height: "2px",
+                borderRadius: "2px",
+                background: "var(--text-heading)",
+                transition: "transform 0.2s ease",
+                transform: mobileOpen ? "translateY(-3.5px) rotate(-45deg)" : "none",
+              }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile menu panel ── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden"
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            background: "var(--bg-page)",
+            borderBottom: "1px solid var(--border)",
+            boxShadow: "var(--shadow-hover)",
+            padding: "8px 20px 16px",
+          }}
+        >
+          {NAV_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              style={{
+                display: "block",
+                padding: "14px 0",
+                fontWeight: 600,
+                fontSize: "1rem",
+                color: "var(--text-heading)",
+                textDecoration: "none",
+                borderBottom: "1px solid var(--border)",
               }}
             >
-              <UserButton afterSignOutUrl="/" userProfileUrl="/dashboard" />
-            </div>
-          ) : (
-            <Link href="/sign-in" className="btn-cyber" style={{ textDecoration: "none" }}>
-              ACCESS TERMINAL
+              {item.label}
+            </Link>
+          ))}
+          {isLoaded && !isSignedIn && (
+            <Link
+              href="/sign-in"
+              onClick={() => setMobileOpen(false)}
+              className="btn-primary"
+              style={{ textDecoration: "none", width: "100%", marginTop: "16px" }}
+            >
+              Sign in
             </Link>
           )}
         </div>
-      </div>
+      )}
     </header>
-  );
-}
-
-/* ── Individual nav link component ── */
-function NavLink({ href, label, sub }) {
-  return (
-    <Link
-      href={href}
-      style={{ textDecoration: "none" }}
-      className="nav-link-terminal"
-    >
-      <style>{`
-        .nav-link-terminal {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 6px 14px;
-          border: 1px solid transparent;
-          transition: all 0.15s ease;
-          position: relative;
-        }
-        .nav-link-terminal:hover {
-          border-color: rgba(59,130,246,0.25);
-          background: rgba(59,130,246,0.05);
-        }
-        .nav-link-terminal:hover .nav-label {
-          color: #3B82F6;
-        }
-        .nav-link-terminal .nav-label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 0.65rem;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          color: #64748B;
-          text-transform: uppercase;
-          transition: color 0.15s;
-        }
-        .nav-link-terminal .nav-sub {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 0.5rem;
-          color: #334155;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-        }
-      `}</style>
-      <span className="nav-label">{label}</span>
-      <span className="nav-sub">{sub}</span>
-    </Link>
   );
 }

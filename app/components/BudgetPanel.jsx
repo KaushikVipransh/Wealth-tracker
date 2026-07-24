@@ -6,7 +6,7 @@ import { updateBudget } from "../actions/budget";
 import { formatINR } from "@/lib/utils";
 
 /* ────────────────────────────────────────────────────────────
-   WEALTHOS — Monthly Budget Allocation Panel
+   WEALTHOS — Monthly Budget Panel
    Meter: green <75% · amber 75–90% · red >90%
 ──────────────────────────────────────────────────────────── */
 
@@ -20,7 +20,9 @@ export default function BudgetPanel({ initialBudget, currentExpenses }) {
   const spent = parseFloat(currentExpenses) || 0;
   const budgetAmount = budget ? parseFloat(budget.amount) : 0;
   const pct = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
-  const meterColor = pct > 90 ? "#F43F5E" : pct >= 75 ? "#F59E0B" : "#10B981";
+  const meterColor = pct > 90 ? "var(--expense)" : pct >= 75 ? "var(--warning)" : "var(--income)";
+  const remaining = Math.max(budgetAmount - spent, 0);
+  const over = spent - budgetAmount;
 
   async function handleSave() {
     setSaving(true);
@@ -30,89 +32,68 @@ export default function BudgetPanel({ initialBudget, currentExpenses }) {
       setBudget({ amount: result.budget.amount });
       setEditing(false);
     } else {
-      setError(result.error || "Budget update failed.");
+      setError(result.error || "Couldn't save the budget.");
     }
     setSaving(false);
   }
 
   return (
-    <div style={{
-      background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-      padding: "24px 28px",
-      position: "relative",
-      overflow: "hidden",
-      border: "1px solid #1E293B",
-      marginBottom: "1px",
-    }}>
-      {/* Corner marks */}
-      <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #F59E0B", borderLeft:"1px solid #F59E0B", opacity:0.6 }} />
-      <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #F59E0B", borderRight:"1px solid #F59E0B", opacity:0.6 }} />
-
+    <div className="card">
       {/* Header row */}
-      <div style={{
-        display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-        gap: "16px", marginBottom: "18px", flexWrap: "wrap",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "12px",
+          marginBottom: "16px",
+          flexWrap: "wrap",
+        }}
+      >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <div style={{ width: "3px", height: "16px", background: "#F59E0B", boxShadow: "0 0 8px rgba(245,158,11,0.6)" }} />
-            <h3 style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-              fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "#E2E8F0",
-            }}>
-              Monthly Budget Allocation
-            </h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px", flexWrap: "wrap" }}>
+            <h3 style={{ fontSize: "1.05rem" }}>Monthly budget</h3>
             {pct >= 80 && budgetAmount > 0 && (
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-                fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                color: "#F59E0B", border: "1px solid rgba(245,158,11,0.35)",
-                background: "rgba(245,158,11,0.08)", padding: "1px 7px",
-              }}>
-                ⚠ ALERT THRESHOLD
-              </span>
+              <span className="tag tag-amber">⚠ Almost there</span>
             )}
           </div>
-          <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            Current month expense ceiling · email sentinel at 80%
+          <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            We&apos;ll email you when you cross 80%.
           </p>
         </div>
 
         {budget && !editing && (
           <button
             onClick={() => { setInputValue(budget.amount); setEditing(true); setError(null); }}
-            className="btn-ghost"
-            style={{ fontSize: "0.6rem", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+            className="btn-secondary btn-sm"
+            style={{ display: "flex", alignItems: "center", gap: "6px" }}
           >
-            <Pencil size={11} />
-            ADJUST
+            <Pencil size={12} />
+            Adjust
           </button>
         )}
       </div>
 
-      {/* Edit mode */}
+      {/* Edit / empty / display states */}
       {editing || !budget ? (
         <div>
           {!budget && !editing ? (
-            <div style={{
-              border: "1px dashed #1E293B",
-              padding: "24px",
-              textAlign: "center",
-            }}>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem",
-                color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-                marginBottom: "14px",
-              }}>
-                NO BUDGET CEILING CONFIGURED
+            <div
+              style={{
+                border: "1px dashed var(--border-strong)",
+                borderRadius: "16px",
+                padding: "28px",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "14px" }}>
+                No monthly limit set yet
               </div>
               <button
                 onClick={() => { setEditing(true); setError(null); }}
-                className="btn-cyber"
-                style={{ fontSize: "0.65rem", padding: "8px 20px", cursor: "pointer" }}
+                className="btn-primary btn-sm"
               >
-                SET BUDGET
+                Set a budget
               </button>
             </div>
           ) : (
@@ -122,7 +103,7 @@ export default function BudgetPanel({ initialBudget, currentExpenses }) {
                 step="0.01"
                 min="1"
                 placeholder="e.g., 50000"
-                className="input-terminal"
+                className="input-field"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 style={{ maxWidth: "220px" }}
@@ -131,75 +112,66 @@ export default function BudgetPanel({ initialBudget, currentExpenses }) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="btn-cyber"
-                style={{ fontSize: "0.65rem", padding: "9px 18px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}
+                className="btn-primary btn-sm"
               >
-                {saving ? "SAVING..." : "COMMIT"}
+                {saving ? "Saving…" : "Save"}
               </button>
               <button
                 onClick={() => { setEditing(false); setError(null); }}
-                className="btn-ghost"
-                style={{ fontSize: "0.65rem", padding: "9px 18px", cursor: "pointer" }}
+                className="btn-ghost btn-sm"
               >
-                CANCEL
+                Cancel
               </button>
             </div>
           )}
 
           {error && (
-            <div style={{
-              marginTop: "10px",
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-              color: "#F43F5E",
-            }}>
-              ERR:// {error}
+            <div style={{ marginTop: "10px", fontSize: "0.85rem", color: "var(--expense)" }}>
+              {error}
             </div>
           )}
         </div>
       ) : (
         <div>
           {/* Spent vs budget readout */}
-          <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "baseline",
-            marginBottom: "10px", flexWrap: "wrap", gap: "8px",
-          }}>
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "1.05rem",
-              fontWeight: 700, color: meterColor,
-              textShadow: `0 0 12px ${meterColor}40`,
-            }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: "10px",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <span className="num" style={{ fontSize: "1.15rem", fontWeight: 700, color: meterColor }}>
               {formatINR(spent)}
-              <span style={{ fontSize: "0.7rem", color: "#64748B", fontWeight: 400 }}> / {formatINR(budgetAmount)}</span>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 400 }}>
+                {" "}/ {formatINR(budgetAmount)}
+              </span>
             </span>
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem",
-              fontWeight: 700, color: meterColor, letterSpacing: "0.06em",
-            }}>
-              {pct.toFixed(1)}% CONSUMED
+            <span className="num" style={{ fontSize: "0.85rem", fontWeight: 600, color: meterColor }}>
+              {pct.toFixed(1)}% used
             </span>
           </div>
 
-          {/* Meter track */}
-          <div style={{
-            width: "100%", height: "6px",
-            background: "rgba(30,41,59,0.8)",
-            position: "relative", overflow: "hidden",
-          }}>
-            <div style={{
-              height: "100%",
-              width: `${Math.min(pct, 100)}%`,
-              background: `linear-gradient(90deg, ${meterColor}, ${meterColor}CC)`,
-              boxShadow: pct > 90 ? `0 0 10px ${meterColor}90` : `0 0 6px ${meterColor}60`,
-              transition: "width 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-            }} />
+          {/* Meter */}
+          <div className="meter-track">
+            <div
+              style={{
+                height: "100%",
+                width: `${Math.min(pct, 100)}%`,
+                background: meterColor,
+                borderRadius: "999px",
+                transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+              }}
+            />
           </div>
 
-          <div style={{
-            marginTop: "8px",
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-            color: "#334155", letterSpacing: "0.04em",
-          }}>
-            {formatINR(Math.max(budgetAmount - spent, 0))} REMAINING THIS MONTH
+          <div style={{ marginTop: "8px", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            {over > 0
+              ? `You're ${formatINR(over)} over budget this month.`
+              : `${formatINR(remaining)} left this month.`}
           </div>
         </div>
       )}

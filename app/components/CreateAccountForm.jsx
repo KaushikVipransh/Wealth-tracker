@@ -5,9 +5,17 @@ import { createBankAccount } from "../actions/account";
 
 /* ────────────────────────────────────────────────────────────
    CreateAccountForm — Client Component
-   Wraps the account creation Server Action with proper
-   error / success feedback state in the terminal aesthetic.
+   Wraps the account creation Server Action with inline
+   success / error feedback.
 ──────────────────────────────────────────────────────────── */
+
+const labelStyle = {
+  display: "block",
+  fontSize: "0.8rem",
+  fontWeight: 500,
+  color: "var(--text-secondary)",
+  marginBottom: "6px",
+};
 
 export default function CreateAccountForm() {
   const [status, setStatus] = useState(null); // null | { type: "success"|"error", message: string }
@@ -22,12 +30,12 @@ export default function CreateAccountForm() {
     const result = await createBankAccount(formData);
 
     if (result.success) {
-      setStatus({ type: "success", message: "Account node initialized successfully." });
+      setStatus({ type: "success", message: "Account added." });
       event.target.reset();
     } else {
       setStatus({
         type: "error",
-        message: result.error || "Unknown error. Check server logs.",
+        message: `Couldn't create the account — ${result.error || "unknown error."}`,
       });
     }
 
@@ -35,139 +43,71 @@ export default function CreateAccountForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
 
       {/* ── Inline feedback banner ── */}
       {status && (
         <div
           role="alert"
           style={{
-            border: `1px solid ${status.type === "success" ? "rgba(16,185,129,0.35)" : "rgba(244,63,94,0.35)"}`,
-            background: status.type === "success" ? "rgba(16,185,129,0.06)" : "rgba(244,63,94,0.06)",
-            padding: "12px 16px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "10px",
+            background: status.type === "success" ? "var(--income-wash)" : "var(--expense-wash)",
+            color: status.type === "success" ? "var(--income)" : "var(--expense)",
+            borderRadius: "12px",
+            padding: "10px 14px",
+            fontSize: "0.85rem",
+            fontWeight: 500,
           }}
         >
-          <span style={{
-            fontFamily: "JetBrains Mono, monospace",
-            fontSize: "0.65rem",
-            fontWeight: 700,
-            color: status.type === "success" ? "#10B981" : "#F43F5E",
-            flexShrink: 0,
-          }}>
-            {status.type === "success" ? "✓" : "ERR://"}
-          </span>
-          <div>
-            <div style={{
-              fontFamily: "JetBrains Mono, monospace",
-              fontSize: "0.6rem",
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: status.type === "success" ? "#10B981" : "#F43F5E",
-              marginBottom: "2px",
-            }}>
-              {status.type === "success" ? "ACCOUNT NODE INITIALIZED" : "ACCOUNT CREATION FAILED"}
-            </div>
-            <div style={{
-              fontFamily: "JetBrains Mono, monospace",
-              fontSize: "0.58rem",
-              color: "#64748B",
-            }}>
-              {status.message}
-            </div>
-          </div>
+          {status.message}
         </div>
       )}
 
       {/* Account Name */}
       <div>
-        <label style={{
-          display: "block", fontFamily: "JetBrains Mono, monospace",
-          fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-          textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-        }}>
-          Account Label
-        </label>
+        <label style={labelStyle} htmlFor="account-name">Account name</label>
         <input
           type="text"
           name="name"
           placeholder="e.g., SBI Savings, HDFC Salary"
           required
-          className="input-terminal"
+          className="input-field"
           id="account-name"
         />
-        <div style={{ height: "1px", background: "linear-gradient(90deg, #3B82F640, transparent)", marginTop: "1px" }} />
       </div>
 
       {/* Account Type */}
       <div>
-        <label style={{
-          display: "block", fontFamily: "JetBrains Mono, monospace",
-          fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-          textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-        }}>
-          Account Type Vector
-        </label>
-        <div style={{ position: "relative" }}>
-          <select
-            name="type"
-            required
-            className="select-terminal"
-            id="account-type"
-          >
-            <option value="CHECKING">CHECKING</option>
-            <option value="SAVINGS">SAVINGS</option>
-            <option value="CREDIT">CREDIT CARD</option>
-            <option value="INVESTMENT">INVESTMENT</option>
-          </select>
-          {/* Custom arrow */}
-          <div style={{
-            position: "absolute", right: "10px", top: "50%",
-            transform: "translateY(-50%)",
-            borderLeft: "4px solid transparent", borderRight: "4px solid transparent",
-            borderTop: "4px solid #3B82F6",
-            pointerEvents: "none",
-          }} />
-        </div>
+        <label style={labelStyle} htmlFor="account-type">Type</label>
+        <select name="type" required className="select-field" id="account-type">
+          <option value="CHECKING">Checking</option>
+          <option value="SAVINGS">Savings</option>
+          <option value="CREDIT">Credit card</option>
+          <option value="INVESTMENT">Investment</option>
+        </select>
       </div>
 
       {/* Initial Balance */}
       <div>
-        <label style={{
-          display: "block", fontFamily: "JetBrains Mono, monospace",
-          fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-          textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-        }}>
-          Initial Balance (₹)
-        </label>
+        <label style={labelStyle} htmlFor="account-balance">Starting balance (₹)</label>
         <input
           type="number"
           name="balance"
           step="0.01"
           placeholder="0.00"
           required
-          className="input-terminal"
+          className="input-field"
           id="account-balance"
         />
-        <div style={{ height: "1px", background: "linear-gradient(90deg, #10B98140, transparent)", marginTop: "1px" }} />
       </div>
 
       <button
         type="submit"
         id="create-account-submit"
-        className="btn-cyber"
+        className="btn-primary"
         disabled={submitting}
-        style={{
-          width: "100%",
-          marginTop: "8px",
-          opacity: submitting ? 0.6 : 1,
-          cursor: submitting ? "not-allowed" : "pointer",
-        }}
+        style={{ width: "100%", marginTop: "4px" }}
       >
-        {submitting ? "INITIALIZING..." : "INITIALIZE ACCOUNT NODE"}
+        {submitting ? "Adding…" : "Add account"}
       </button>
     </form>
   );

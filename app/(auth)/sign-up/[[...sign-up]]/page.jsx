@@ -4,59 +4,25 @@ export default function SignUpPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 64px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "48px 24px",
-        background: "#090D16",
-        position: "relative",
-        overflow: "hidden",
+        padding: "48px 20px",
+        background: "var(--bg-sky)",
       }}
     >
-      {/* Background glows */}
-      <div
-        style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "600px", height: "400px",
-          background: "radial-gradient(ellipse at center, rgba(16,185,129,0.07) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div style={{ position: "relative", zIndex: 2 }}>
-        {/* Terminal header above Clerk box */}
-        <div style={{
-          textAlign: "center", marginBottom: "32px",
-        }}>
-          <div style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-            color: "#334155", letterSpacing: "0.12em", textTransform: "uppercase",
-            marginBottom: "12px",
-          }}>
-            WEALTHOS · NEW OPERATOR REGISTRATION
-          </div>
-          <h1 style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "1.4rem",
-            fontWeight: 700, color: "#E2E8F0", letterSpacing: "-0.02em",
-            marginBottom: "4px",
-          }}>
-            Initialize Workspace
-          </h1>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-            <span className="status-live-dot" />
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-              color: "#10B981", letterSpacing: "0.08em", textTransform: "uppercase",
-            }}>
-              REGISTRATION PORTAL OPEN
-            </span>
-          </div>
+      <div style={{ width: "100%", maxWidth: "440px" }}>
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <span className="eyebrow">Get started</span>
+          <h1 style={{ fontSize: "1.6rem", margin: "12px 0 6px" }}>Create your account</h1>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+            Free to use — set up in under a minute.
+          </p>
         </div>
-
-        {/* 🔐 Clerk's native drop-in signup form component */}
-        <SignUp />
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <SignUp />
+        </div>
       </div>
     </div>
   );

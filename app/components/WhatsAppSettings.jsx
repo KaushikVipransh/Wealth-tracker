@@ -4,7 +4,7 @@ import { useState } from "react";
 
 /* ────────────────────────────────────────────────────────────
    WhatsAppSettings — Dashboard Integration Panel
-   Matches the WealthOS terminal inline-style design system.
+   Light fintech aesthetic
 ──────────────────────────────────────────────────────────── */
 
 const TWILIO_SANDBOX_CODE = "join none-screen";
@@ -34,7 +34,7 @@ export default function WhatsAppSettings() {
         throw new Error(data.error || "Failed to link device.");
       }
 
-      setStatus({ type: "success", message: "Phone number saved. Complete the WhatsApp handshake below." });
+      setStatus({ type: "success", message: "Phone number saved. Finish the two WhatsApp steps below." });
       setIsLinked(true);
     } catch (error) {
       setStatus({ type: "error", message: error.message });
@@ -44,100 +44,79 @@ export default function WhatsAppSettings() {
   }
 
   return (
-    <div style={{
-      background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-      border: "1px solid #1E293B",
-      padding: "28px",
-      position: "relative",
-      overflow: "hidden",
-      maxWidth: "680px",
-    }}>
-      {/* Corner accent marks */}
-      <span style={{ position: "absolute", top: 0, left: 0, width: "12px", height: "12px", borderTop: "1px solid #A78BFA", borderLeft: "1px solid #A78BFA", opacity: 0.7 }} />
-      <span style={{ position: "absolute", bottom: 0, right: 0, width: "12px", height: "12px", borderBottom: "1px solid #A78BFA", borderRight: "1px solid #A78BFA", opacity: 0.7 }} />
-
-      {/* Background glow */}
-      <div style={{
-        position: "absolute", top: 0, right: 0, width: "200px", height: "200px",
-        background: "radial-gradient(ellipse at top right, rgba(167,139,250,0.05) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-
+    <div className="card" style={{ maxWidth: "680px" }}>
       {/* Header */}
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "3px", height: "16px", background: "#A78BFA", boxShadow: "0 0 8px rgba(167,139,250,0.6)" }} />
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-              fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "#E2E8F0",
-            }}>
-              WhatsApp Integration Node
-            </span>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "12px",
+          marginBottom: "20px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+          <div
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "12px",
+              background: "var(--brand-wash)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <WhatsAppIcon />
           </div>
-          {/* Live indicator */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{
-              width: "6px", height: "6px", borderRadius: "50%",
-              background: isLinked ? "#10B981" : "#334155",
-              boxShadow: isLinked ? "0 0 8px rgba(16,185,129,0.6)" : "none",
-              display: "inline-block",
-            }} />
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-              color: isLinked ? "#10B981" : "#334155",
-              letterSpacing: "0.08em", textTransform: "uppercase",
-            }}>
-              {isLinked ? "LINKED" : "UNLINKED"}
-            </span>
+          <div>
+            <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Log expenses from WhatsApp</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Text your spending, we&apos;ll file it.
+            </p>
           </div>
         </div>
-        <p style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-          color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase",
-          paddingLeft: "11px",
-        }}>
-          Direct-inject transactions via WhatsApp text syntax
-        </p>
+
+        <span className={`tag ${isLinked ? "tag-green" : "tag-gray"}`}>
+          {isLinked ? "Linked" : "Not linked"}
+        </span>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleLinkDevice} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <form onSubmit={handleLinkDevice} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div>
-          <label style={{
-            display: "block", fontFamily: "JetBrains Mono, monospace",
-            fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-            textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-          }}>
-            Device Phone Number
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.8rem",
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              marginBottom: "6px",
+            }}
+          >
+            WhatsApp phone number
           </label>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <input
               type="text"
               placeholder="e.g. 919876543210 (with country code)"
               value={phoneNumber}
               disabled={isLinked}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="input-terminal"
-              style={{ flex: 1, opacity: isLinked ? 0.5 : 1 }}
+              className="input-field"
+              style={{ flex: 1, minWidth: "200px", opacity: isLinked ? 0.5 : 1 }}
             />
             <button
               type="submit"
               disabled={loading || isLinked}
-              className="btn-cyber"
-              style={{
-                whiteSpace: "nowrap",
-                opacity: loading || isLinked ? 0.5 : 1,
-                cursor: loading || isLinked ? "not-allowed" : "pointer",
-                fontSize: "0.65rem",
-                padding: "0 20px",
-              }}
+              className="btn-primary btn-sm"
+              style={{ whiteSpace: "nowrap" }}
             >
-              {loading ? "SAVING..." : isLinked ? "✓ LINKED" : "SAVE ROUTE"}
+              {loading ? "Saving…" : isLinked ? "✓ Linked" : "Save number"}
             </button>
           </div>
-          <div style={{ height: "1px", background: "linear-gradient(90deg, #A78BFA40, transparent)", marginTop: "1px" }} />
         </div>
 
         {/* Status banner */}
@@ -145,92 +124,75 @@ export default function WhatsAppSettings() {
           <div
             role="alert"
             style={{
-              border: `1px solid ${status.type === "success" ? "rgba(16,185,129,0.35)" : "rgba(244,63,94,0.35)"}`,
-              background: status.type === "success" ? "rgba(16,185,129,0.06)" : "rgba(244,63,94,0.06)",
-              padding: "12px 16px",
-              display: "flex", alignItems: "flex-start", gap: "10px",
+              background: status.type === "success" ? "var(--income-wash)" : "var(--expense-wash)",
+              color: status.type === "success" ? "var(--income)" : "var(--expense)",
+              borderRadius: "12px",
+              padding: "10px 14px",
+              fontSize: "0.85rem",
+              fontWeight: 500,
             }}
           >
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-              fontWeight: 700, color: status.type === "success" ? "#10B981" : "#F43F5E",
-              flexShrink: 0,
-            }}>
-              {status.type === "success" ? "✓" : "ERR://"}
-            </span>
-            <div>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-                fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                color: status.type === "success" ? "#10B981" : "#F43F5E",
-                marginBottom: "2px",
-              }}>
-                {status.type === "success" ? "DEVICE ROUTE SAVED" : "LINK FAILURE"}
-              </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#64748B" }}>
-                {status.message}
-              </div>
-            </div>
+            {status.message}
           </div>
         )}
       </form>
 
-      {/* Handshake guide — revealed after successful link */}
+      {/* Setup guide — revealed after successful link */}
       {isLinked && (
-        <div style={{
-          marginTop: "24px",
-          paddingTop: "20px",
-          borderTop: "1px solid #1E293B",
-        }}>
-          <div style={{
-            fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-            color: "#64748B", letterSpacing: "0.1em", textTransform: "uppercase",
-            fontWeight: 600, marginBottom: "16px",
-          }}>
-            Final Handshake — 2 Steps Required
+        <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid var(--border)" }}>
+          <div style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-heading)", marginBottom: "16px" }}>
+            Two quick steps to finish
           </div>
 
           {[
             {
-              step: "01",
-              label: "Open WhatsApp and message the carrier number",
+              step: "1",
+              label: "Open WhatsApp and message this number",
               value: TWILIO_PHONE_NUMBER,
-              valueColor: "#E2E8F0",
             },
             {
-              step: "02",
-              label: "Send this exact sync token to activate the webhook",
+              step: "2",
+              label: "Send this exact message to activate",
               value: TWILIO_SANDBOX_CODE,
-              valueColor: "#A78BFA",
             },
-          ].map(({ step, label, value, valueColor }) => (
-            <div key={step} style={{
-              display: "flex", alignItems: "flex-start", gap: "16px",
-              marginBottom: "14px",
-            }}>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                fontWeight: 700, color: "#A78BFA", letterSpacing: "0.08em",
-                flexShrink: 0, marginTop: "1px",
-              }}>
-                [{step}]
+          ].map(({ step, label, value }) => (
+            <div
+              key={step}
+              style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "14px" }}
+            >
+              <span
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "999px",
+                  background: "var(--brand-wash)",
+                  color: "var(--brand)",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                {step}
               </span>
               <div>
-                <div style={{
-                  fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-                  color: "#64748B", marginBottom: "4px",
-                }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "6px" }}>
                   {label}
                 </div>
-                <code style={{
-                  fontFamily: "JetBrains Mono, monospace", fontSize: "0.68rem",
-                  fontWeight: 700, color: valueColor,
-                  background: "rgba(30,41,59,0.5)",
-                  border: "1px solid #1E293B",
-                  padding: "3px 10px",
-                  display: "inline-block",
-                  letterSpacing: "0.04em",
-                }}>
+                <code
+                  style={{
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    color: "var(--text-heading)",
+                    background: "var(--bg-inset)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "8px",
+                    padding: "4px 12px",
+                    display: "inline-block",
+                  }}
+                >
                   {value}
                 </code>
               </div>
@@ -238,49 +200,35 @@ export default function WhatsAppSettings() {
           ))}
 
           {/* Usage hint */}
-          <div style={{
-            marginTop: "16px",
-            padding: "12px 14px",
-            background: "rgba(167,139,250,0.04)",
-            border: "1px solid rgba(167,139,250,0.15)",
-          }}>
-            <div style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-              color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-              marginBottom: "6px",
-            }}>
-              EXAMPLE COMMAND SYNTAX
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "14px 16px",
+              background: "var(--bg-inset)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+            }}
+          >
+            <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "6px" }}>
+              Try sending
             </div>
-            <div style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-              color: "#A78BFA", fontStyle: "italic",
-            }}>
+            <div style={{ fontSize: "0.9rem", color: "var(--text-heading)", fontStyle: "italic" }}>
               &quot;Spent 350 on fuel from sbi&quot;
             </div>
-            <div style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-              color: "#334155", marginTop: "4px",
-            }}>
-              → Amount: ₹350 · Category: UTILITIES · Account: SBI
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
+              → ₹350 · Utilities · SBI account
             </div>
           </div>
         </div>
       )}
-
-      {/* Bottom status bar */}
-      <div style={{
-        marginTop: "20px", paddingTop: "14px",
-        borderTop: "1px solid #1E293B",
-        display: "flex", alignItems: "center", gap: "8px",
-      }}>
-        <span className="status-live-dot" />
-        <span style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-          color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase",
-        }}>
-          TWILIO WEBHOOK · GEMINI AI PARSER · ONLINE
-        </span>
-      </div>
     </div>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
   );
 }

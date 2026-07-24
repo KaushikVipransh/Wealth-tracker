@@ -2,8 +2,8 @@ import { getUserAccounts } from "../actions/account";
 import CreateAccountForm from "../components/CreateAccountForm";
 
 /* ────────────────────────────────────────────────────────────
-   WEALTHOS — Account Portfolio Management
-   Dark-Cyber Terminal Aesthetic
+   WEALTHOS — Accounts
+   Light fintech aesthetic
 ──────────────────────────────────────────────────────────── */
 
 export default async function AccountPage() {
@@ -22,290 +22,153 @@ export default async function AccountPage() {
     }).format(numericAmount);
   };
 
-  // Account type configs
+  // Account type configs — deep colors tuned for white background
   const typeConfig = {
-    CHECKING:   { color: "#3B82F6", label: "CHECKING",   glow: "rgba(59,130,246,0.3)"  },
-    SAVINGS:    { color: "#10B981", label: "SAVINGS",    glow: "rgba(16,185,129,0.3)"  },
-    CREDIT:     { color: "#F43F5E", label: "CREDIT",     glow: "rgba(244,63,94,0.3)"   },
-    INVESTMENT: { color: "#A78BFA", label: "INVESTMENT", glow: "rgba(167,139,250,0.3)" },
+    CHECKING:   { color: "#0284C7", wash: "rgba(2,132,199,0.10)",   label: "Checking" },
+    SAVINGS:    { color: "#16A34A", wash: "rgba(22,163,74,0.10)",   label: "Savings" },
+    CREDIT:     { color: "#E0402F", wash: "rgba(224,64,47,0.10)",   label: "Credit" },
+    INVESTMENT: { color: "#7C3AED", wash: "rgba(124,58,237,0.10)",  label: "Investment" },
   };
 
+  const totalBalance = accounts.reduce((sum, acc) => {
+    const bal = parseFloat(acc.balance) || 0;
+    return acc.type === "CREDIT" ? sum - bal : sum + bal;
+  }, 0);
+
   return (
-    <div style={{
-      padding: "40px 24px 60px",
-      maxWidth: "1280px",
-      margin: "0 auto",
-      fontFamily: "Inter, system-ui, sans-serif",
-    }}>
+    <div className="section" style={{ paddingTop: "40px", paddingBottom: "64px" }}>
 
       {/* ── HEADER ── */}
-      <div style={{ marginBottom: "48px" }}>
-        {/* Breadcrumb */}
-        <div style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-          color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase",
-          marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px",
-        }}>
-          <span style={{ color: "#3B82F6" }}>WEALTHOS</span>
-          <span>/</span>
-          <span style={{ color: "#64748B" }}>ACCOUNT PORTFOLIOS</span>
-        </div>
-        <h1 style={{
-          fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 800,
-          letterSpacing: "-0.03em", color: "#E2E8F0", lineHeight: 1.1, marginBottom: "8px",
-        }}>
-          Account Portfolio Manager
-        </h1>
-        <p style={{ fontSize: "0.82rem", color: "#64748B", fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.02em" }}>
-          {accounts.length} active account{accounts.length !== 1 ? "s" : ""} · multi-bank pool tracking
+      <div style={{ marginBottom: "40px" }}>
+        <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", marginBottom: "8px" }}>Accounts</h1>
+        <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)" }}>
+          Everything you&apos;ve connected, in one place · {accounts.length} account
+          {accounts.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       {/* ── MAIN GRID ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "340px 1fr",
-        gap: "1px",
-        background: "#1E293B",
-        alignItems: "start",
-      }}>
+      <div className="layout-split">
 
         {/* ── LEFT: CREATE ACCOUNT FORM ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #3B82F6", borderLeft:"1px solid #3B82F6", opacity:0.7 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #3B82F6", borderRight:"1px solid #3B82F6", opacity:0.7 }} />
-
-          {/* Background glow */}
-          <div style={{
-            position: "absolute", top: 0, right: 0, width: "150px", height: "150px",
-            background: "radial-gradient(ellipse at top right, rgba(59,130,246,0.06) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }} />
-
-          {/* Panel header */}
-          <div style={{ marginBottom: "28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <div style={{ width: "3px", height: "16px", background: "#3B82F6", boxShadow: "0 0 8px rgba(59,130,246,0.6)" }} />
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#E2E8F0",
-              }}>
-                Initialize Account Pool
-              </span>
-            </div>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase", paddingLeft: "11px" }}>
-              Configure new bank account node
+        <div className="card">
+          <div style={{ marginBottom: "24px" }}>
+            <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Add an account</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Track a bank account, card, or investment pool.
             </p>
           </div>
 
-          {/* Form — Client Component handles error/success state */}
           <CreateAccountForm />
-
-          {/* Bottom status */}
-          <div style={{
-            marginTop: "20px", paddingTop: "16px",
-            borderTop: "1px solid #1E293B",
-            display: "flex", alignItems: "center", gap: "8px",
-          }}>
-            <span className="status-live-dot" />
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-              color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase",
-            }}>
-              PRISMA · POSTGRESQL CONNECTED
-            </span>
-          </div>
         </div>
 
-        {/* ── RIGHT: ACCOUNTS GRID ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          minHeight: "400px",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #10B981", borderLeft:"1px solid #10B981", opacity:0.6 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #10B981", borderRight:"1px solid #10B981", opacity:0.6 }} />
-
-          {/* Header */}
-          <div style={{ marginBottom: "28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <div style={{ width: "3px", height: "16px", background: "#10B981", boxShadow: "0 0 8px rgba(16,185,129,0.6)" }} />
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#E2E8F0",
-              }}>
-                Active Account Pools
+        {/* ── RIGHT: ACCOUNTS ── */}
+        <div>
+          {/* Total balance strip */}
+          {accounts.length > 0 && (
+            <div
+              className="card"
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "8px",
+                marginBottom: "16px",
+                background: "var(--brand)",
+                border: "none",
+              }}
+            >
+              <span style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>
+                Total balance
+              </span>
+              <span
+                className="num"
+                style={{ fontSize: "1.75rem", fontWeight: 800, color: "#FFFFFF" }}
+              >
+                {formatINR(totalBalance)}
               </span>
             </div>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase", paddingLeft: "11px" }}>
-              {accounts.length} node{accounts.length !== 1 ? "s" : ""} registered · all accounts live
-            </p>
-          </div>
+          )}
 
           {accounts.length === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "80px 24px",
-              border: "1px dashed #1E293B",
-            }}>
-              <div style={{ marginBottom: "12px", opacity: 0.3 }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="1.5" style={{ margin: "0 auto" }}>
-                  <rect x="2" y="7" width="20" height="14" rx="0" />
-                  <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
-                </svg>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "80px 24px",
+                border: "1px dashed var(--border-strong)",
+                borderRadius: "var(--radius-card)",
+              }}
+            >
+              <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                No accounts yet
               </div>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-                marginBottom: "6px",
-              }}>
-                NO ACCOUNT NODES REGISTERED
-              </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#1E293B" }}>
-                Initialize your first account pool using the form on the left
+              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                Add your first account using the form to get started.
               </div>
             </div>
           ) : (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: "1px",
-              background: "#1E293B",
-            }}>
-              {accounts.map((account) => {
-                const cfg = typeConfig[account.type] || typeConfig.CHECKING;
-                const balance = typeof account.balance === "string" ? parseFloat(account.balance) : account.balance;
-                const isNeg = balance < 0;
-
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              {accounts.map((acc) => {
+                const cfg = typeConfig[acc.type] || typeConfig.CHECKING;
+                const balance = parseFloat(acc.balance) || 0;
+                const negative = balance < 0;
                 return (
-                  <div
-                    key={account.id}
-                    style={{
-                      background: "linear-gradient(135deg, #0F1825 0%, #111927 100%)",
-                      padding: "20px",
-                      position: "relative",
-                      overflow: "hidden",
-                      transition: "background 0.2s ease",
-                    }}
-                    className="account-card"
-                  >
-                    <style>{`
-                      .account-card:hover {
-                        background: linear-gradient(135deg, #111D2E 0%, #131E2C 100%) !important;
-                      }
-                    `}</style>
-
-                    {/* Corner accent */}
-                    <span style={{
-                      position: "absolute", top: "0", left: "0", width: "10px", height: "10px",
-                      borderTop: `1px solid ${cfg.color}`, borderLeft: `1px solid ${cfg.color}`,
-                      opacity: 0.8,
-                    }} />
-
-                    {/* Background glow */}
-                    <div style={{
-                      position: "absolute", top: 0, right: 0, width: "100px", height: "100px",
-                      background: `radial-gradient(ellipse at top right, ${cfg.color}06 0%, transparent 70%)`,
-                      pointerEvents: "none",
-                    }} />
-
-                    {/* Type tag */}
-                    <div style={{
-                      display: "inline-flex", alignItems: "center",
-                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                      fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase",
-                      color: cfg.color, border: `1px solid ${cfg.glow}`,
-                      background: `${cfg.color}08`,
-                      padding: "2px 8px", marginBottom: "14px",
-                    }}>
-                      {cfg.label}
+                  <div key={acc.id} className="card card-hover">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "16px",
+                        gap: "8px",
+                      }}
+                    >
+                      <span className="tag" style={{ background: cfg.wash, color: cfg.color }}>
+                        {cfg.label}
+                      </span>
+                      {acc.isDefault && <span className="tag tag-brand">Default</span>}
                     </div>
 
-                    {/* Account name */}
-                    <h3 style={{
-                      fontSize: "0.95rem", fontWeight: 700, color: "#E2E8F0",
-                      letterSpacing: "-0.01em", marginBottom: "4px",
-                    }}>
-                      {account.name}
-                    </h3>
-
-                    {/* Account ID */}
-                    <div style={{
-                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-                      color: "#334155", letterSpacing: "0.04em", marginBottom: "16px",
-                    }}>
-                      ID_{account.id.slice(0, 10).toUpperCase()}
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "1rem",
+                        color: "var(--text-heading)",
+                        marginBottom: "12px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {acc.name}
                     </div>
 
-                    {/* Divider with meter */}
-                    <div style={{ height: "1px", background: "#1E293B", marginBottom: "14px" }} />
+                    <hr className="divider" style={{ marginBottom: "12px" }} />
 
-                    {/* Balance */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-                        color: "#334155", textTransform: "uppercase", letterSpacing: "0.08em",
-                      }}>
-                        CURRENT BALANCE
-                      </span>
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace",
-                        fontSize: "1.1rem", fontWeight: 700,
-                        color: isNeg ? "#F43F5E" : cfg.color,
-                        textShadow: `0 0 12px ${isNeg ? "rgba(244,63,94,0.4)" : cfg.color + "40"}`,
-                        letterSpacing: "-0.02em",
-                      }}>
-                        {formatINR(balance)}
-                      </span>
+                    <div
+                      className="num"
+                      style={{
+                        fontSize: "1.5rem",
+                        fontWeight: 800,
+                        color: negative ? "var(--expense)" : "var(--text-heading)",
+                      }}
+                    >
+                      {formatINR(balance)}
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
-
-          {/* Total balance summary */}
-          {accounts.length > 0 && (
-            <div style={{
-              marginTop: "1px",
-              background: "rgba(30,41,59,0.3)",
-              border: "1px solid #1E293B",
-              borderTop: "none",
-              padding: "14px 20px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem",
-                color: "#64748B", textTransform: "uppercase", letterSpacing: "0.08em",
-              }}>
-                AGGREGATE PORTFOLIO BALANCE
-              </span>
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: "1rem", fontWeight: 700, color: "#3B82F6",
-                textShadow: "0 0 12px rgba(59,130,246,0.4)",
-              }}>
-                {formatINR(accounts.reduce((sum, a) => {
-                  const b = typeof a.balance === "string" ? parseFloat(a.balance) : a.balance;
-                  return sum + (isNaN(b) ? 0 : b);
-                }, 0))}
-              </span>
-            </div>
-          )}
         </div>
       </div>
-
     </div>
   );
 }

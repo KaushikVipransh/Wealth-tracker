@@ -5,6 +5,21 @@ import { createTransaction, getUserTransactions } from "../actions/transaction";
 import { getUserAccounts } from "../actions/account";
 import ReceiptScanner from "../components/ReceiptScanner";
 
+/* ────────────────────────────────────────────────────────────
+   WEALTHOS — Transactions
+   Light fintech aesthetic
+──────────────────────────────────────────────────────────── */
+
+const CATEGORY_CONFIG = {
+  FOOD:          { label: "Food",          color: "#E11D48" },
+  SHOPPING:      { label: "Shopping",      color: "#D97706" },
+  ENTERTAINMENT: { label: "Entertainment", color: "#7C3AED" },
+  UTILITIES:     { label: "Utilities",     color: "#0284C7" },
+  INVESTMENT:    { label: "Investment",    color: "#059669" },
+  SALARY:        { label: "Salary",        color: "#16A34A" },
+  OTHERS:        { label: "Others",        color: "#475569" },
+};
+
 // Local YYYY-MM-DD for the date input default
 const todayISO = () => {
   const d = new Date();
@@ -21,19 +36,12 @@ const INITIAL_FORM = {
   recurringInterval: "MONTHLY",
 };
 
-/* ────────────────────────────────────────────────────────────
-   WEALTHOS — Transaction Ledger
-   Dark-Cyber Terminal Aesthetic
-──────────────────────────────────────────────────────────── */
-
-const CATEGORY_CONFIG = {
-  FOOD:          { label: "Food & Dining",     color: "#F43F5E" },
-  SHOPPING:      { label: "Shopping",           color: "#F59E0B" },
-  ENTERTAINMENT: { label: "Entertainment",      color: "#A78BFA" },
-  UTILITIES:     { label: "Bills & Utilities",  color: "#38BDF8" },
-  INVESTMENT:    { label: "Investments",         color: "#10B981" },
-  SALARY:        { label: "Salary / Income",    color: "#10B981" },
-  OTHERS:        { label: "Others / Misc",      color: "#64748B" },
+const labelStyle = {
+  display: "block",
+  fontSize: "0.8rem",
+  fontWeight: 500,
+  color: "var(--text-secondary)",
+  marginBottom: "6px",
 };
 
 export default function TransactionPage() {
@@ -56,7 +64,7 @@ export default function TransactionPage() {
       category: data.category,
       date: data.date || v.date,
     }));
-    setTxStatus({ type: "success", title: "RECEIPT PARSED", message: "Fields pre-filled from receipt — review & commit." });
+    setTxStatus({ type: "success", title: "Receipt scanned", message: "Fields pre-filled from your receipt — review and save." });
   }
 
   // 🇮🇳 Inline Indian Rupee (INR) Formatter Engine
@@ -101,15 +109,14 @@ export default function TransactionPage() {
 
     const result = await createTransaction(formData);
     if (result.success) {
-      setTxStatus({ type: "success", message: "Transaction committed to ledger." });
+      setTxStatus({ type: "success", message: "Transaction saved." });
       form.reset();
       setFormValues({ ...INITIAL_FORM, date: todayISO() });
       startTransition(() => {
         loadData();
       });
     } else {
-      // 🚨 Inline error — no more blocking alert()
-      setTxStatus({ type: "error", message: result.error || "Unknown write failure." });
+      setTxStatus({ type: "error", message: result.error || "Something went wrong — try again." });
     }
     setSubmitting(false);
   }
@@ -118,58 +125,29 @@ export default function TransactionPage() {
   const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((s, t) => s + parseFloat(t.amount), 0);
 
   return (
-    <div style={{
-      padding: "40px 24px 60px",
-      maxWidth: "1280px",
-      margin: "0 auto",
-      fontFamily: "Inter, system-ui, sans-serif",
-    }}>
+    <div className="section" style={{ paddingTop: "40px", paddingBottom: "64px" }}>
 
       {/* ── HEADER ── */}
-      <div style={{ marginBottom: "48px" }}>
-        <div style={{
-          fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-          color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase",
-          marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px",
-        }}>
-          <span style={{ color: "#3B82F6" }}>WEALTHOS</span>
-          <span>/</span>
-          <span style={{ color: "#64748B" }}>TRANSACTION LEDGER</span>
-        </div>
-        <h1 style={{
-          fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 800,
-          letterSpacing: "-0.03em", color: "#E2E8F0", lineHeight: 1.1, marginBottom: "8px",
-        }}>
-          Transaction History Ledger
-        </h1>
-        <p style={{ fontSize: "0.82rem", color: "#64748B", fontFamily: "JetBrains Mono, monospace", letterSpacing: "0.02em" }}>
-          {transactions.length} entries logged · atomic database transaction engine
+      <div style={{ marginBottom: "32px" }}>
+        <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.2rem)", marginBottom: "8px" }}>Transactions</h1>
+        <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)" }}>
+          Log it once, see it forever · {transactions.length} entr{transactions.length === 1 ? "y" : "ies"}
         </p>
       </div>
 
-      {/* ── QUICK STATS STRIP ── */}
+      {/* ── QUICK STATS ── */}
       {!loading && transactions.length > 0 && (
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "1px", background: "#1E293B", marginBottom: "1px",
-        }}>
+        <div className="stat-row" style={{ marginBottom: "24px" }}>
           {[
-            { label: "TOTAL ENTRIES", value: transactions.length.toString(), color: "#3B82F6" },
-            { label: "TOTAL INFLOW",  value: `+${formatINR(totalIncome)}`,   color: "#10B981" },
-            { label: "TOTAL OUTFLOW", value: `-${formatINR(totalExpense)}`,   color: "#F43F5E" },
+            { label: "Total entries", value: transactions.length.toString(), color: "var(--text-heading)" },
+            { label: "Money in", value: `+${formatINR(totalIncome)}`, color: "var(--income)" },
+            { label: "Money out", value: `−${formatINR(totalExpense)}`, color: "var(--expense)" },
           ].map((stat) => (
-            <div key={stat.label} style={{
-              background: "linear-gradient(135deg, #0D1420, #0F1825)",
-              padding: "16px 20px",
-            }}>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem", color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>
+            <div key={stat.label} className="card-muted" style={{ padding: "18px 20px" }}>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "6px" }}>
                 {stat.label}
               </div>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "1rem", fontWeight: 700,
-                color: stat.color, textShadow: `0 0 12px ${stat.color}40`,
-                letterSpacing: "-0.01em",
-              }}>
+              <div className="num" style={{ fontSize: "1.2rem", fontWeight: 700, color: stat.color }}>
                 {stat.value}
               </div>
             </div>
@@ -178,110 +156,50 @@ export default function TransactionPage() {
       )}
 
       {/* ── MAIN GRID ── */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "340px 1fr",
-        gap: "1px",
-        background: "#1E293B",
-        alignItems: "start",
-      }}>
+      <div className="layout-split">
 
         {/* ── LEFT: LOG TRANSACTION FORM ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #3B82F6", borderLeft:"1px solid #3B82F6", opacity:0.7 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #3B82F6", borderRight:"1px solid #3B82F6", opacity:0.7 }} />
-
-          {/* Background glow */}
-          <div style={{
-            position: "absolute", top: 0, right: 0, width: "150px", height: "150px",
-            background: "radial-gradient(ellipse at top right, rgba(59,130,246,0.06) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }} />
-
-          {/* Panel header */}
-          <div style={{ marginBottom: "28px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <div style={{ width: "3px", height: "16px", background: "#3B82F6", boxShadow: "0 0 8px rgba(59,130,246,0.6)" }} />
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#E2E8F0",
-              }}>
-                Log Transaction Entry
-              </span>
-            </div>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase", paddingLeft: "11px" }}>
-              Atomic write · auto-adjusts account balance
+        <div className="card">
+          <div style={{ marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "1.05rem", marginBottom: "4px" }}>Add a transaction</h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              Balances update automatically.
             </p>
           </div>
 
-          {/* ── Inline Tx Status Banner ── */}
+          {/* ── Inline status banner ── */}
           {txStatus && (
             <div
               role="alert"
               style={{
-                border: `1px solid ${txStatus.type === "success" ? "rgba(16,185,129,0.35)" : "rgba(244,63,94,0.35)"}`,
-                background: txStatus.type === "success" ? "rgba(16,185,129,0.06)" : "rgba(244,63,94,0.06)",
-                padding: "12px 16px",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "10px",
-                marginBottom: "4px",
+                background: txStatus.type === "success" ? "var(--income-wash)" : "var(--expense-wash)",
+                color: txStatus.type === "success" ? "var(--income)" : "var(--expense)",
+                borderRadius: "12px",
+                padding: "10px 14px",
+                marginBottom: "16px",
               }}
             >
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace",
-                fontSize: "0.65rem",
-                fontWeight: 700,
-                color: txStatus.type === "success" ? "#10B981" : "#F43F5E",
-                flexShrink: 0,
-              }}>
-                {txStatus.type === "success" ? "✓" : "ERR://"}
-              </span>
-              <div>
-                <div style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "0.6rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: txStatus.type === "success" ? "#10B981" : "#F43F5E",
-                  marginBottom: "2px",
-                }}>
-                  {txStatus.title || (txStatus.type === "success" ? "TRANSACTION COMMITTED" : "WRITE FAILURE")}
-                </div>
-                <div style={{
-                  fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "0.58rem",
-                  color: "#64748B",
-                }}>
-                  {txStatus.message}
-                </div>
+              <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                {txStatus.title || (txStatus.type === "success" ? "Saved" : "Couldn't save")}
               </div>
+              <div style={{ fontSize: "0.8rem", opacity: 0.85 }}>{txStatus.message}</div>
             </div>
           )}
 
           {accounts.length === 0 ? (
-            <div style={{
-              border: "1px solid rgba(245,158,11,0.3)",
-              background: "rgba(245,158,11,0.05)",
-              padding: "16px",
-            }}>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.62rem",
-                color: "#F59E0B", letterSpacing: "0.06em", textTransform: "uppercase",
-                marginBottom: "6px",
-              }}>
-                ⚠ NO ACCOUNT NODES FOUND
+            <div
+              style={{
+                background: "var(--warning-wash)",
+                color: "var(--warning)",
+                borderRadius: "12px",
+                padding: "14px 16px",
+              }}
+            >
+              <div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "4px" }}>
+                No accounts yet
               </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#64748B" }}>
-                Initialize a bank account pool under the Accounts module first.
+              <div style={{ fontSize: "0.8rem" }}>
+                Create an account first on the Accounts page.
               </div>
             </div>
           ) : (
@@ -289,23 +207,17 @@ export default function TransactionPage() {
             {/* 📸 AI Receipt Scanner — pre-fills the form below */}
             <ReceiptScanner onScanComplete={handleScanComplete} />
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
 
               {/* Description */}
               <div>
-                <label style={{
-                  display: "block", fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-                }}>
-                  Transaction Description
-                </label>
+                <label style={labelStyle} htmlFor="tx-description">Description</label>
                 <input
                   type="text"
                   name="description"
-                  placeholder="e.g., Kirana Store, Salary Bonus"
+                  placeholder="e.g., Kirana store, salary bonus"
                   required
-                  className="input-terminal"
+                  className="input-field"
                   id="tx-description"
                   value={formValues.description}
                   onChange={(e) => setField("description", e.target.value)}
@@ -313,49 +225,28 @@ export default function TransactionPage() {
               </div>
 
               {/* Type + Amount row */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{
-                    display: "block", fontFamily: "JetBrains Mono, monospace",
-                    fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                    textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-                  }}>
-                    Type Vector
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <select
-                      name="type" required className="select-terminal" id="tx-type"
-                      value={formValues.type}
-                      onChange={(e) => setField("type", e.target.value)}
-                    >
-                      <option value="EXPENSE">EXPENSE (−)</option>
-                      <option value="INCOME">INCOME (+)</option>
-                    </select>
-                    <div style={{
-                      position: "absolute", right: "8px", top: "50%",
-                      transform: "translateY(-50%)",
-                      borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
-                      borderTop: "4px solid #3B82F6",
-                      pointerEvents: "none",
-                    }} />
-                  </div>
+                  <label style={labelStyle} htmlFor="tx-type">Type</label>
+                  <select
+                    name="type" required className="select-field" id="tx-type"
+                    value={formValues.type}
+                    onChange={(e) => setField("type", e.target.value)}
+                  >
+                    <option value="EXPENSE">Expense (−)</option>
+                    <option value="INCOME">Income (+)</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label style={{
-                    display: "block", fontFamily: "JetBrains Mono, monospace",
-                    fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                    textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-                  }}>
-                    Amount (₹)
-                  </label>
+                  <label style={labelStyle} htmlFor="tx-amount">Amount (₹)</label>
                   <input
                     type="number"
                     name="amount"
                     step="0.01"
                     placeholder="0.00"
                     required
-                    className="input-terminal"
+                    className="input-field"
                     id="tx-amount"
                     value={formValues.amount}
                     onChange={(e) => setField("amount", e.target.value)}
@@ -365,112 +256,114 @@ export default function TransactionPage() {
 
               {/* Entry Date */}
               <div>
-                <label style={{
-                  display: "block", fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-                }}>
-                  Entry Date
-                </label>
+                <label style={labelStyle} htmlFor="tx-date">Date</label>
                 <input
                   type="date"
                   name="date"
                   required
-                  className="input-terminal"
+                  className="input-field"
                   id="tx-date"
                   value={formValues.date}
                   onChange={(e) => setField("date", e.target.value)}
-                  style={{ colorScheme: "dark" }}
                 />
               </div>
 
               {/* Category */}
               <div>
-                <label style={{
-                  display: "block", fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-                }}>
-                  Category Tag
-                </label>
-                <div style={{ position: "relative" }}>
-                  <select
-                    name="category" required className="select-terminal" id="tx-category"
-                    value={formValues.category}
-                    onChange={(e) => setField("category", e.target.value)}
-                  >
-                    <option value="FOOD">FOOD &amp; DINING</option>
-                    <option value="SHOPPING">SHOPPING</option>
-                    <option value="ENTERTAINMENT">ENTERTAINMENT</option>
-                    <option value="UTILITIES">BILLS &amp; UTILITIES</option>
-                    <option value="INVESTMENT">INVESTMENTS</option>
-                    <option value="SALARY">SALARY / INCOME</option>
-                    <option value="OTHERS">OTHERS / MISC</option>
-                  </select>
-                  <div style={{
-                    position: "absolute", right: "8px", top: "50%",
-                    transform: "translateY(-50%)",
-                    borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
-                    borderTop: "4px solid #3B82F6",
-                    pointerEvents: "none",
-                  }} />
-                </div>
+                <label style={labelStyle} htmlFor="tx-category">Category</label>
+                <select
+                  name="category" required className="select-field" id="tx-category"
+                  value={formValues.category}
+                  onChange={(e) => setField("category", e.target.value)}
+                >
+                  <option value="FOOD">Food &amp; dining</option>
+                  <option value="SHOPPING">Shopping</option>
+                  <option value="ENTERTAINMENT">Entertainment</option>
+                  <option value="UTILITIES">Bills &amp; utilities</option>
+                  <option value="INVESTMENT">Investments</option>
+                  <option value="SALARY">Salary / income</option>
+                  <option value="OTHERS">Others</option>
+                </select>
               </div>
 
-              {/* 🔁 Recurring Schedule */}
-              <div style={{
-                border: `1px solid ${formValues.isRecurring ? "rgba(167,139,250,0.35)" : "#1E293B"}`,
-                background: formValues.isRecurring ? "rgba(167,139,250,0.05)" : "rgba(30,41,59,0.15)",
-                padding: "14px 16px",
-                transition: "all 0.2s ease",
-              }}>
-                <label style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  cursor: "pointer", userSelect: "none",
-                }}>
+              {/* 🔁 Recurring toggle */}
+              <div
+                style={{
+                  border: `1px solid ${formValues.isRecurring ? "var(--brand)" : "var(--border)"}`,
+                  background: formValues.isRecurring ? "var(--brand-wash)" : "var(--bg-inset)",
+                  borderRadius: "12px",
+                  padding: "12px 14px",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    gap: "10px",
+                  }}
+                >
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: formValues.isRecurring ? "var(--brand)" : "var(--text-secondary)" }}>
+                    ↻ Repeats on a schedule
+                  </span>
+
+                  {/* Hidden real checkbox keeps FormData behavior identical */}
                   <input
                     type="checkbox"
                     name="isRecurring"
                     checked={formValues.isRecurring}
                     onChange={(e) => setField("isRecurring", e.target.checked)}
-                    style={{ accentColor: "#A78BFA", width: "14px", height: "14px", cursor: "pointer" }}
+                    style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
                   />
-                  <span style={{
-                    fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-                    fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                    color: formValues.isRecurring ? "#A78BFA" : "#64748B",
-                  }}>
-                    ↻ RECURRING SCHEDULE
+                  {/* Pill switch visual */}
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: "44px",
+                      height: "24px",
+                      borderRadius: "999px",
+                      background: formValues.isRecurring ? "var(--brand)" : "var(--border-strong)",
+                      position: "relative",
+                      flexShrink: 0,
+                      transition: "background 0.2s ease",
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "3px",
+                        left: formValues.isRecurring ? "23px" : "3px",
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "999px",
+                        background: "#FFFFFF",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                        transition: "left 0.2s ease",
+                      }}
+                    />
                   </span>
                 </label>
 
                 {formValues.isRecurring && (
-                  <div style={{ marginTop: "12px", position: "relative" }}>
+                  <div style={{ marginTop: "12px" }}>
                     <select
                       name="recurringInterval"
                       required
-                      className="select-terminal"
+                      className="select-field"
                       id="tx-recurring-interval"
                       value={formValues.recurringInterval}
                       onChange={(e) => setField("recurringInterval", e.target.value)}
                     >
-                      <option value="DAILY">DAILY</option>
-                      <option value="WEEKLY">WEEKLY</option>
-                      <option value="MONTHLY">MONTHLY</option>
-                      <option value="YEARLY">YEARLY</option>
+                      <option value="DAILY">Daily</option>
+                      <option value="WEEKLY">Weekly</option>
+                      <option value="MONTHLY">Monthly</option>
+                      <option value="YEARLY">Yearly</option>
                     </select>
-                    <div style={{
-                      position: "absolute", right: "8px", top: "50%",
-                      transform: "translateY(-50%)",
-                      borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
-                      borderTop: "4px solid #A78BFA",
-                      pointerEvents: "none",
-                    }} />
-                    <p style={{
-                      fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-                      color: "#334155", letterSpacing: "0.04em", marginTop: "6px",
-                    }}>
-                      Auto-replays via scheduler engine at each interval
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "6px" }}>
+                      We&apos;ll add this automatically at each interval.
                     </p>
                   </div>
                 )}
@@ -478,242 +371,136 @@ export default function TransactionPage() {
 
               {/* Target Account */}
               <div>
-                <label style={{
-                  display: "block", fontFamily: "JetBrains Mono, monospace",
-                  fontSize: "0.58rem", color: "#64748B", letterSpacing: "0.1em",
-                  textTransform: "uppercase", fontWeight: 600, marginBottom: "8px",
-                }}>
-                  Target Account Node
-                </label>
-                <div style={{ position: "relative" }}>
-                  <select name="accountId" required className="select-terminal" id="tx-account">
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name} · {formatINR(acc.balance)}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{
-                    position: "absolute", right: "8px", top: "50%",
-                    transform: "translateY(-50%)",
-                    borderLeft: "3px solid transparent", borderRight: "3px solid transparent",
-                    borderTop: "4px solid #3B82F6",
-                    pointerEvents: "none",
-                  }} />
-                </div>
+                <label style={labelStyle} htmlFor="tx-account">Account</label>
+                <select name="accountId" required className="select-field" id="tx-account">
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} · {formatINR(acc.balance)}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <button
                 type="submit"
                 id="submit-transaction"
-                className="btn-cyber"
+                className="btn-primary"
                 disabled={submitting}
-                style={{
-                  width: "100%",
-                  opacity: submitting ? 0.6 : 1,
-                  cursor: submitting ? "not-allowed" : "pointer",
-                }}
+                style={{ width: "100%" }}
               >
-                {submitting ? "PROCESSING..." : "COMMIT TRANSACTION"}
+                {submitting ? "Saving…" : "Add transaction"}
               </button>
             </form>
             </>
           )}
-
-          {/* Status */}
-          <div style={{
-            marginTop: "20px", paddingTop: "16px",
-            borderTop: "1px solid #1E293B",
-            display: "flex", alignItems: "center", gap: "8px",
-          }}>
-            <span className="status-live-dot" />
-            <span style={{
-              fontFamily: "JetBrains Mono, monospace", fontSize: "0.55rem",
-              color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase",
-            }}>
-              ATOMIC WRITE ENGINE · ONLINE
-            </span>
-          </div>
         </div>
 
         {/* ── RIGHT: TRANSACTION HISTORY ── */}
-        <div style={{
-          background: "linear-gradient(135deg, #0D1420 0%, #0F1825 100%)",
-          padding: "28px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          {/* Corner marks */}
-          <span style={{ position:"absolute", top:"0", left:"0", width:"12px", height:"12px", borderTop:"1px solid #10B981", borderLeft:"1px solid #10B981", opacity:0.6 }} />
-          <span style={{ position:"absolute", bottom:"0", right:"0", width:"12px", height:"12px", borderBottom:"1px solid #10B981", borderRight:"1px solid #10B981", opacity:0.6 }} />
-
-          {/* Header */}
-          <div style={{ marginBottom: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <div style={{ width: "3px", height: "16px", background: "#10B981", boxShadow: "0 0 8px rgba(16,185,129,0.6)" }} />
-              <span style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                color: "#E2E8F0",
-              }}>
-                Full History Ledger
-              </span>
-            </div>
-            <p style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", color: "#334155", letterSpacing: "0.06em", textTransform: "uppercase", paddingLeft: "11px" }}>
-              All committed transactions · immutable audit log
-            </p>
+        <div className="card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
+              gap: "12px",
+            }}
+          >
+            <h3 style={{ fontSize: "1.05rem" }}>History</h3>
+            <span className="tag tag-gray">{transactions.length} total</span>
           </div>
 
           {/* Loading state */}
           {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[...Array(5)].map((_, i) => (
-                <div key={i} style={{
-                  height: "56px",
-                  background: "rgba(30,41,59,0.3)",
-                  animation: "pulse 1.5s ease-in-out infinite",
-                  animationDelay: `${i * 0.1}s`,
-                }} />
+                <div
+                  key={i}
+                  style={{
+                    height: "52px",
+                    background: "var(--bg-card-muted)",
+                    borderRadius: "12px",
+                    animation: "pulse-soft 1.5s ease-in-out infinite",
+                    animationDelay: `${i * 0.1}s`,
+                  }}
+                />
               ))}
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#334155", textAlign: "center", marginTop: "8px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                FETCHING LEDGER DATA...
-              </div>
             </div>
           ) : transactions.length === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "80px 24px",
-              border: "1px dashed #1E293B",
-            }}>
-              <div style={{
-                fontFamily: "JetBrains Mono, monospace", fontSize: "0.65rem",
-                color: "#334155", letterSpacing: "0.08em", textTransform: "uppercase",
-                marginBottom: "6px",
-              }}>
-                LEDGER EMPTY — NO ENTRIES LOGGED
+            <div
+              style={{
+                textAlign: "center",
+                padding: "72px 24px",
+                border: "1px dashed var(--border-strong)",
+                borderRadius: "16px",
+              }}
+            >
+              <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                No transactions yet
               </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem", color: "#1E293B" }}>
-                Add your first income or expense entry using the form on the left
+              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                Add your first one using the form.
               </div>
             </div>
           ) : (
-            <div>
-              {/* Table header */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto auto auto",
-                gap: "12px",
-                padding: "6px 12px",
-                background: "rgba(30,41,59,0.3)",
-                borderTop: "1px solid #1E293B",
-                borderBottom: "1px solid #1E293B",
-                marginBottom: "0",
-              }}>
-                {["DESCRIPTION / ID", "CATEGORY", "DATE", "AMOUNT"].map((h) => (
-                  <span key={h} style={{
-                    fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-                    color: "#334155", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600,
-                  }}>
-                    {h}
-                  </span>
-                ))}
-              </div>
-
-              {/* Transaction rows */}
-              <div style={{ maxHeight: "520px", overflowY: "auto" }}>
-                {transactions.map((tx, idx) => {
-                  const catCfg = CATEGORY_CONFIG[tx.category] || CATEGORY_CONFIG.OTHERS;
-                  return (
-                    <div
-                      key={tx.id}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr auto auto auto",
-                        gap: "12px",
-                        padding: "12px 12px",
-                        borderBottom: "1px solid rgba(30,41,59,0.5)",
-                        alignItems: "center",
-                        transition: "background 0.15s ease",
-                      }}
-                      className="tx-row"
-                    >
-                      <style>{`
-                        .tx-row:hover {
-                          background: rgba(59,130,246,0.03) !important;
-                        }
-                      `}</style>
-
-                      {/* Description */}
-                      <div>
-                        <div style={{
-                          fontWeight: 600, fontSize: "0.82rem", color: "#E2E8F0",
-                          letterSpacing: "-0.01em", marginBottom: "2px",
-                          display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap",
-                        }}>
-                          {tx.description || "Uncategorized"}
-                          {tx.isRecurring && (
-                            <span style={{
-                              fontFamily: "JetBrains Mono, monospace", fontSize: "0.5rem",
-                              fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                              color: "#A78BFA", border: "1px solid rgba(167,139,250,0.35)",
-                              background: "rgba(167,139,250,0.08)", padding: "1px 6px",
-                              whiteSpace: "nowrap",
-                            }}>
-                              ↻ {tx.recurringInterval || "RECURRING"}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{
-                          fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-                          color: "#334155", letterSpacing: "0.04em",
-                        }}>
-                          TX_{tx.id.slice(0, 8).toUpperCase()}
-                        </div>
+            <div style={{ maxHeight: "560px", overflowY: "auto" }}>
+              {transactions.map((tx) => {
+                const catCfg = CATEGORY_CONFIG[tx.category] || CATEGORY_CONFIG.OTHERS;
+                return (
+                  <div key={tx.id} className="ledger-row">
+                    {/* Description */}
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          fontSize: "0.9rem",
+                          color: "var(--text-heading)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {tx.description || "Untitled"}
+                        </span>
+                        {tx.isRecurring && (
+                          <span className="tag tag-brand">↻ {tx.recurringInterval ? tx.recurringInterval.charAt(0) + tx.recurringInterval.slice(1).toLowerCase() : "Recurring"}</span>
+                        )}
                       </div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
+                        {tx.accountName}
+                      </div>
+                    </div>
 
-                      {/* Category */}
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace", fontSize: "0.52rem",
-                        fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: catCfg.color,
-                        border: `1px solid ${catCfg.color}30`,
-                        background: `${catCfg.color}08`,
-                        padding: "2px 7px",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {tx.category}
-                      </span>
-
-                      {/* Date */}
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace", fontSize: "0.6rem",
-                        color: "#64748B", whiteSpace: "nowrap",
-                      }}>
+                    {/* Meta: date + category (wraps to its own line on mobile) */}
+                    <span className="lr-meta">
+                      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         {new Date(tx.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
                       </span>
-
-                      {/* Amount */}
-                      <span style={{
-                        fontFamily: "JetBrains Mono, monospace",
-                        fontSize: "0.88rem", fontWeight: 700,
-                        color: tx.type === "INCOME" ? "#10B981" : "#F43F5E",
-                        textShadow: tx.type === "INCOME"
-                          ? "0 0 8px rgba(16,185,129,0.35)"
-                          : "0 0 8px rgba(244,63,94,0.35)",
-                        letterSpacing: "-0.01em",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {tx.type === "INCOME" ? "+" : "−"}
-                        {formatINR(tx.amount).replace("INR", "").trim()}
+                      <span
+                        className="tag"
+                        style={{ background: `${catCfg.color}14`, color: catCfg.color }}
+                      >
+                        {catCfg.label}
                       </span>
-                    </div>
-                  );
-                })}
-              </div>
+                    </span>
+
+                    {/* Amount */}
+                    <span
+                      className={`num ${tx.type === "INCOME" ? "value-green" : "value-red"}`}
+                      style={{ fontWeight: 700, fontSize: "0.95rem", whiteSpace: "nowrap" }}
+                    >
+                      {tx.type === "INCOME" ? "+" : "−"}
+                      {formatINR(tx.amount).replace("INR", "").trim()}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
-
     </div>
   );
 }
