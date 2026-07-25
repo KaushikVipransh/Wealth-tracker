@@ -410,6 +410,7 @@ html.custom-cursor input, html.custom-cursor textarea { cursor: auto; }
 @keyframes wa-typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
 @keyframes wa-pop { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
 .wa-pop { animation: wa-pop 0.35s cubic-bezier(.22,1,.36,1) both; }
+.wa-body::-webkit-scrollbar { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

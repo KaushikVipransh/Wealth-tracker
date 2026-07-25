@@ -62,6 +62,13 @@ export default function WhatsAppChat() {
   const [count, setCount] = useState(0);   // messages shown
   const [typing, setTyping] = useState(false);
   const timers = useRef([]);
+  const bodyRef = useRef(null);
+
+  // Keep the newest message in view without resizing the fixed-height box
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [count, typing]);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -133,17 +140,21 @@ export default function WhatsAppChat() {
         </div>
       </div>
 
-      {/* Chat body — WhatsApp beige wallpaper */}
+      {/* Chat body — WhatsApp beige wallpaper (fixed height, scrolls internally) */}
       <div
+        ref={bodyRef}
+        className="wa-body"
         style={{
           background: "#ECE5DD",
           backgroundImage:
             "radial-gradient(circle at 20% 30%, rgba(0,0,0,0.015) 0 2px, transparent 2px), radial-gradient(circle at 70% 60%, rgba(0,0,0,0.015) 0 2px, transparent 2px)",
           backgroundSize: "40px 40px",
           padding: "14px 12px 10px",
-          minHeight: "380px",
+          height: "400px",
+          overflowY: "auto",
           display: "flex",
           flexDirection: "column",
+          scrollbarWidth: "none",
         }}
       >
         {/* TODAY pill */}
