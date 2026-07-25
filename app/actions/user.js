@@ -1,7 +1,26 @@
 "use server"; // 🚀 Forces this function to run strictly on the secure server side
 
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser, auth } from "@clerk/nextjs/server";
 import { DB } from "@/lib/prisma";
+
+/**
+ * Returns the caller's current WhatsApp link status for the settings panel.
+ * @returns {Promise<{ linked: boolean, phone: string|null }>}
+ */
+export async function getWhatsAppStatus() {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { linked: false, phone: null };
+    const user = await DB.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { whatsappPhone: true },
+    });
+    return { linked: !!user?.whatsappPhone, phone: user?.whatsappPhone || null };
+  } catch (error) {
+    console.error("❌ WhatsApp status query failed:", error);
+    return { linked: false, phone: null };
+  }
+}
 
 export async function syncUserToDatabase() {
   try {
