@@ -358,14 +358,14 @@ html.custom-cursor input, html.custom-cursor textarea { cursor: auto; }
 
 .dc-ring {
   position: fixed; top: 0; left: 0; width: 28px; height: 28px;
-  border: 1.5px solid rgba(240, 73, 42, 0.8); border-radius: 50%;
+  border: 1.5px solid rgba(23, 19, 15, 0.85); border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   z-index: 9999; pointer-events: none; opacity: 0; will-change: transform;
-  background: rgba(240, 73, 42, 0);
+  background: rgba(23, 19, 15, 0);
   transition: opacity 0.25s ease, background 0.2s ease, border-color 0.2s ease;
 }
 .dc-ring.dc-visible { opacity: 1; }
-.dc-ring.dc-hover { background: rgba(240, 73, 42, 0.15); border-color: var(--brand); }
+.dc-ring.dc-hover { background: rgba(23, 19, 15, 0.15); border-color: #17130F; }
 .dc-ring.dc-text .dc-arrow { opacity: 0 !important; }
 .dc-arrow { transition: opacity 0.2s ease; }
 @media (hover: none), (pointer: coarse) { .dc-ring { display: none; } }

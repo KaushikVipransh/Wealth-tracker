@@ -86,7 +86,7 @@ export default function DirectionalCursor() {
       <svg ref={arrowRef} className="dc-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path
           d="M2 6h7M6 2.5 9.5 6 6 9.5"
-          stroke="#F0492A"
+          stroke="#17130F"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
