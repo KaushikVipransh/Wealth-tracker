@@ -191,7 +191,7 @@ export default function Home() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {[
                 "Every write is wrapped in a database transaction",
-                "Encrypted connections end to end",
+                "Encrypted connections (TLS) for all traffic",
                 "Only you can see your accounts and history",
               ].map((t) => (
                 <div key={t} style={{ display: "flex", alignItems: "center", gap: "10px" }}>

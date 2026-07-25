@@ -165,7 +165,7 @@ export default function WhatsAppChat() {
         {/* Encryption notice */}
         <div style={{ textAlign: "center", marginBottom: "12px" }}>
           <span style={{ background: "#FEF6D0", color: "#7A6C43", fontSize: "0.64rem", lineHeight: 1.4, padding: "6px 12px", borderRadius: "8px", display: "inline-block", maxWidth: "88%", boxShadow: "0 1px 0.5px rgba(0,0,0,0.06)" }}>
-            🔒 Messages are end-to-end encrypted. Only you and WealthOS can read them.
+            🔒 Chat secured over an encrypted connection. Transactions are logged privately to your account.
           </span>
         </div>
 
