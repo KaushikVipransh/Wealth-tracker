@@ -1,10 +1,19 @@
 import Link from "next/link";
+import WhatsAppChat from "./components/WhatsAppChat";
+import Reveal from "./components/Reveal";
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Landing Page
    "Safe Harbor" — Arist-inspired editorial fintech.
    Hero focus: log transactions straight from WhatsApp.
 ──────────────────────────────────────────────────────────── */
+
+const TRUST_BADGES = [
+  { icon: <LockIcon />, label: "AES-256 encryption" },
+  { icon: <ShieldIcon />, label: "Private by default" },
+  { icon: <KeyIcon />, label: "Zero-trust auth" },
+  { icon: <DbIcon />, label: "Atomic ledger" },
+];
 
 export default function Home() {
   return (
@@ -54,64 +63,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right — WhatsApp chat mockup on coral panel */}
+          {/* Right — real WhatsApp chat mockup */}
           <div className="animate-fade-up delay-200" style={{ position: "relative" }}>
-            <div
-              style={{
-                background: "var(--brand)",
-                borderRadius: "var(--radius-card-lg)",
-                padding: "28px",
-                boxShadow: "var(--shadow-hover)",
-              }}
-            >
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  borderRadius: "20px",
-                  padding: "18px",
-                  boxShadow: "0 10px 30px rgba(20,15,10,0.18)",
-                }}
-              >
-                {/* chat header */}
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", paddingBottom: "14px", borderBottom: "1px solid var(--border)", marginBottom: "14px" }}>
-                  <div style={{ width: "36px", height: "36px", borderRadius: "999px", background: "var(--brand)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: "0.9rem" }}>W</div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-heading)" }}>WealthOS</div>
-                    <div style={{ fontSize: "0.7rem", color: "var(--income)", display: "flex", alignItems: "center", gap: "5px" }}>
-                      <span className="dot-live" style={{ width: "6px", height: "6px" }} /> online
-                    </div>
-                  </div>
-                </div>
-
-                {/* chat bubbles */}
-                <ChatBubble side="out">Spent 350 on lunch from SBI</ChatBubble>
-                <ChatBubble side="in">
-                  <div style={{ fontWeight: 700, marginBottom: "6px", color: "var(--text-heading)" }}>✅ Logged to your ledger</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
-                    <span style={{ color: "var(--text-secondary)" }}>Amount</span>
-                    <span className="num value-red" style={{ fontWeight: 700 }}>−₹350.00</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginTop: "3px" }}>
-                    <span style={{ color: "var(--text-secondary)" }}>Category</span>
-                    <span className="tag" style={{ background: "rgba(225,29,72,0.1)", color: "#E11D48" }}>Food</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginTop: "3px" }}>
-                    <span style={{ color: "var(--text-secondary)" }}>Account</span>
-                    <span style={{ color: "var(--text-heading)", fontWeight: 600 }}>SBI</span>
-                  </div>
-                </ChatBubble>
-                <ChatBubble side="out">Received salary 50000 in HDFC</ChatBubble>
-                <ChatBubble side="in">
-                  <div style={{ fontWeight: 700, color: "var(--text-heading)" }}>✅ +₹50,000 income logged</div>
-                </ChatBubble>
-              </div>
-            </div>
+            <WhatsAppChat />
 
             {/* floating stat chip */}
             <div
               className="float-soft hero-chip"
               style={{
-                position: "absolute", top: "-16px", left: "-14px",
+                position: "absolute", top: "-14px", left: "-18px", zIndex: 2,
                 background: "#FFFFFF", borderRadius: "14px", padding: "10px 14px",
                 boxShadow: "var(--shadow-pop)", border: "1px solid var(--border)",
                 alignItems: "center", gap: "8px",
@@ -128,22 +88,19 @@ export default function Home() {
           TRUST STRIP
       ══════════════════════════════════════════════════════ */}
       <section style={{ background: "var(--bg-page)", borderBottom: "1px solid var(--border)" }}>
-        <div className="section-tight" style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "0.8rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "20px" }}>
+        <div className="section-tight">
+          <p style={{ fontSize: "0.8rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "20px", textAlign: "center" }}>
             Built with the security standards your money deserves
           </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: "14px", flexWrap: "wrap" }}>
-            {[
-              { icon: <LockIcon />, label: "AES-256 encryption" },
-              { icon: <ShieldIcon />, label: "Private by default" },
-              { icon: <KeyIcon />, label: "Zero-trust auth" },
-              { icon: <DbIcon />, label: "Atomic ledger" },
-            ].map((b) => (
-              <div key={b.label} className="card" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 18px" }}>
-                <span style={{ color: "var(--brand)", display: "flex" }}>{b.icon}</span>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-heading)" }}>{b.label}</span>
-              </div>
-            ))}
+          <div className="marquee">
+            <div className="marquee-track">
+              {[...TRUST_BADGES, ...TRUST_BADGES].map((b, i) => (
+                <div key={i} className="card" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 18px", flexShrink: 0 }}>
+                  <span style={{ color: "var(--brand)", display: "flex" }}>{b.icon}</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-heading)", whiteSpace: "nowrap" }}>{b.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -168,14 +125,16 @@ export default function Home() {
               { n: "1", t: "Link your number", d: "Connect WhatsApp once from your dashboard — takes under a minute." },
               { n: "2", t: "Text what you spent", d: "“Paid 800 electricity from Axis.” Plain English is all it needs." },
               { n: "3", t: "It files itself", d: "AI parses the amount, category and account, then writes it atomically." },
-            ].map((s) => (
-              <div key={s.n} className="card card-lg">
-                <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "var(--brand-wash)", color: "var(--brand)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, marginBottom: "16px" }}>
-                  {s.n}
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={i * 120}>
+                <div className="card card-lg" style={{ height: "100%" }}>
+                  <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "var(--brand-wash)", color: "var(--brand)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, marginBottom: "16px" }}>
+                    {s.n}
+                  </div>
+                  <h3 style={{ fontSize: "1.1rem", marginBottom: "8px" }}>{s.t}</h3>
+                  <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>{s.d}</p>
                 </div>
-                <h3 style={{ fontSize: "1.1rem", marginBottom: "8px" }}>{s.t}</h3>
-                <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>{s.d}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -271,11 +230,13 @@ export default function Home() {
               { value: "7", label: "Smart categories" },
               { value: "24/7", label: "Automatic recurring entries" },
               { value: "100%", label: "Atomic, consistent ledger" },
-            ].map((s) => (
-              <div key={s.label} className="card" style={{ textAlign: "center" }}>
-                <div className="num text-gradient" style={{ fontSize: "2rem", fontWeight: 800, marginBottom: "6px" }}>{s.value}</div>
-                <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{s.label}</div>
-              </div>
+            ].map((s, i) => (
+              <Reveal key={s.label} delay={i * 100}>
+                <div className="card" style={{ textAlign: "center" }}>
+                  <div className="num text-gradient" style={{ fontSize: "2rem", fontWeight: 800, marginBottom: "6px" }}>{s.value}</div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{s.label}</div>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -314,27 +275,6 @@ function FeatureTile({ href, icon, title, desc }) {
         <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>{desc}</p>
       </div>
     </Link>
-  );
-}
-
-function ChatBubble({ side, children }) {
-  const out = side === "out";
-  return (
-    <div style={{ display: "flex", justifyContent: out ? "flex-end" : "flex-start", marginBottom: "10px" }}>
-      <div
-        style={{
-          maxWidth: "82%",
-          background: out ? "var(--brand)" : "var(--bg-cream)",
-          color: out ? "#fff" : "var(--text-body)",
-          borderRadius: out ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-          padding: "10px 14px",
-          fontSize: "0.85rem",
-          lineHeight: 1.45,
-        }}
-      >
-        {children}
-      </div>
-    </div>
   );
 }
 

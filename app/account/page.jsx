@@ -1,5 +1,6 @@
 import { getUserAccounts } from "../actions/account";
 import CreateAccountForm from "../components/CreateAccountForm";
+import CountUp from "../components/CountUp";
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Accounts
@@ -82,12 +83,12 @@ export default async function AccountPage() {
               <span style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>
                 Total balance
               </span>
-              <span
+              <CountUp
+                value={totalBalance}
+                format="inr"
                 className="num"
                 style={{ fontSize: "1.75rem", fontWeight: 800, color: "#FFFFFF" }}
-              >
-                {formatINR(totalBalance)}
-              </span>
+              />
             </div>
           )}
 

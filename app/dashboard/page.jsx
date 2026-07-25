@@ -6,6 +6,7 @@ import WhatsAppSettings from "../components/WhatsAppSettings";
 import BudgetPanel from "../components/BudgetPanel";
 import CategoryDonut from "../components/charts/CategoryDonut";
 import CashflowBars from "../components/charts/CashflowBars";
+import CountUp from "../components/CountUp";
 
 /* ────────────────────────────────────────────────────────────
    WEALTHOS — Dashboard
@@ -107,21 +108,23 @@ export default async function DashboardPage() {
         <MetricCard
           featured
           label="Total balance"
-          value={formatINR(totalAssetBalance)}
+          amount={totalAssetBalance}
           valueColor="#FFFFFF"
           footer="Cash + savings − card balances"
           tag={isPositive ? { text: "Positive", cls: "tag-green" } : { text: "In deficit", cls: "tag-red" }}
         />
         <MetricCard
           label="Total income"
-          value={`+${formatINR(totalIncome)}`}
+          amount={totalIncome}
+          prefix="+"
           valueColor="var(--income)"
           footer={`Savings rate: ${savingsRate.toFixed(1)}%`}
           tag={{ text: "Money in", cls: "tag-green" }}
         />
         <MetricCard
           label="Total spent"
-          value={`−${formatINR(totalExpense)}`}
+          amount={totalExpense}
+          prefix="−"
           valueColor="var(--expense)"
           footer={`${burnRate.toFixed(0)}% of income spent`}
           tag={{ text: "Money out", cls: "tag-red" }}
@@ -175,12 +178,12 @@ export default async function DashboardPage() {
                   </div>
                   <div className="meter-track">
                     <div
+                      className="bar-grow"
                       style={{
                         height: "100%",
                         width: `${pct}%`,
                         background: cat.color,
                         borderRadius: "999px",
-                        transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                       }}
                     />
                   </div>
@@ -370,7 +373,7 @@ export default async function DashboardPage() {
 /* ────────────────────────────────────────────────────────────
    METRIC CARD
 ──────────────────────────────────────────────────────────── */
-function MetricCard({ label, value, valueColor, footer, tag, featured }) {
+function MetricCard({ label, amount, prefix = "", value, valueColor, footer, tag, featured }) {
   return (
     <div
       className="card"
@@ -408,7 +411,7 @@ function MetricCard({ label, value, valueColor, footer, tag, featured }) {
           overflowWrap: "anywhere",
         }}
       >
-        {value}
+        {amount != null ? <CountUp value={amount} format="inr" prefix={prefix} /> : value}
       </div>
 
       <div
